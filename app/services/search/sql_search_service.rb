@@ -148,9 +148,16 @@ module Search
         # Try multiple key variations for flexibility
         possible_keys = specification_key_variations(key)
 
-        # Build OR condition for all possible keys with ILIKE matching
-        conditions = possible_keys.map do |k|
-          scope.where('specifications->>? ILIKE ?', k, "%#{value}%")
+        # Normalize value - extract numeric part for values like "32GB"
+        normalized_value = normalize_spec_value(value)
+        search_values = [value, normalized_value].uniq.compact_blank
+
+        # Build OR condition for all possible key+value combinations
+        conditions = []
+        possible_keys.each do |k|
+          search_values.each do |v|
+            conditions << scope.where('specifications->>? ILIKE ?', k, "%#{v}%")
+          end
         end
 
         # Combine with OR
@@ -171,6 +178,8 @@ module Search
         'video_card' => ['gpu'],
         'processor' => ['cpu'],
         'memory' => %w[ram_gb RAM],
+        'ram' => ['ram_gb'],
+        'storage' => ['storage_gb'],
         'operating_system' => ['os']
       }
 
@@ -181,6 +190,11 @@ module Search
       variations.concat(key_mappings[key_str.downcase]) if key_mappings[key_str.downcase]
 
       variations.uniq
+    end
+
+    def normalize_spec_value(value)
+      # Extract numeric values from strings like "32GB", "16gb", "512GB"
+      value.to_s.gsub(/[^\d.]/, '')
     end
   end
 end

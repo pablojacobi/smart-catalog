@@ -7,6 +7,7 @@ RUN apt-get update -qq && \
     build-essential \
     git \
     libpq-dev \
+    libyaml-dev \
     curl \
     && rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
@@ -14,7 +15,7 @@ RUN apt-get update -qq && \
 WORKDIR /app
 
 # Install bundler
-RUN gem install bundler -v 2.5.6
+RUN gem install bundler -v 2.6.2
 
 # Copy Gemfile
 COPY Gemfile Gemfile.lock ./
