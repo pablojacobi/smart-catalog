@@ -12,6 +12,9 @@ require 'webmock/rspec'
 # Load support files
 Rails.root.glob('spec/support/**/*.rb').each { |f| require f }
 
+# Force routes to load to ensure Devise mappings are available
+Rails.application.reload_routes!
+
 begin
   ActiveRecord::Migration.maintain_test_schema!
 rescue ActiveRecord::PendingMigrationError => e
