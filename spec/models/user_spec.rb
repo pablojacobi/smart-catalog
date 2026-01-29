@@ -19,10 +19,6 @@ RSpec.describe User do
       expect(described_class.devise_modules).to include(:database_authenticatable)
     end
 
-    it 'includes recoverable' do
-      expect(described_class.devise_modules).to include(:recoverable)
-    end
-
     it 'includes rememberable' do
       expect(described_class.devise_modules).to include(:rememberable)
     end
@@ -33,6 +29,10 @@ RSpec.describe User do
 
     it 'does not include registerable' do
       expect(described_class.devise_modules).not_to include(:registerable)
+    end
+
+    it 'does not include recoverable (no mailer needed)' do
+      expect(described_class.devise_modules).not_to include(:recoverable)
     end
   end
 end
