@@ -91,8 +91,20 @@ docker-compose up --build
 ### 3. Setup Database
 
 ```bash
-docker-compose exec app rails db:create db:migrate db:seed
+# Run migrations
+docker-compose run --rm app rails db:migrate
+
+# Option A: Full dataset (1000+ products)
+# See db/SEED_DATA.md for details on obtaining catalog_1000.json
+cp path/to/catalog_1000.json db/
+docker-compose run --rm app rails db:seed
+
+# Option B: Small sample dataset (10 products)
+# Edit db/seeds.rb to comment out JSON loading and uncomment sample data
+docker-compose run --rm app rails db:seed
 ```
+
+> **Note**: The full dataset (`catalog_1000.json`) is not included in the repository. See [`db/SEED_DATA.md`](db/SEED_DATA.md) for instructions.
 
 ### 4. Access the Application
 

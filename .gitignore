@@ -34,6 +34,9 @@
 # Ignore coverage reports
 /coverage/
 
+# Ignore seed data files
+/db/catalog_*.json
+
 # Ignore node modules
 /node_modules/
 
