@@ -2,7 +2,9 @@
 
 Rails.application.routes.draw do
   # Authentication (Devise)
-  devise_for :users, skip: [:registrations]
+  devise_for :users, skip: [:registrations], controllers: {
+    sessions: 'users/sessions'
+  }
 
   # Landing page (public)
   root 'home#index'
