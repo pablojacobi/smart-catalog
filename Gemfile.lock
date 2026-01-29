@@ -160,6 +160,10 @@ GEM
     nio4r (2.7.5)
     nokogiri (1.19.0-aarch64-linux-gnu)
       racc (~> 1.4)
+    nokogiri (1.19.0-arm64-darwin)
+      racc (~> 1.4)
+    nokogiri (1.19.0-x86_64-linux-gnu)
+      racc (~> 1.4)
     oj (3.16.13)
       bigdecimal (>= 3.0)
       ostruct (>= 0.2)
@@ -169,6 +173,8 @@ GEM
       ast (~> 2.4.1)
       racc
     pg (1.6.3-aarch64-linux)
+    pg (1.6.3-arm64-darwin)
+    pg (1.6.3-x86_64-linux)
     pp (0.6.3)
       prettyprint
     prettyprint (0.2.0)
@@ -303,6 +309,8 @@ GEM
 
 PLATFORMS
   aarch64-linux
+  arm64-darwin-24
+  x86_64-linux
 
 DEPENDENCIES
   blueprinter (~> 1.1)

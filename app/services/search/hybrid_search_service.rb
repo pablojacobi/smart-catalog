@@ -106,7 +106,7 @@ module Search
       scores
     end
 
-    def merge_results(vector_scores:, sql_product_ids:, sql_products:, filters:) # rubocop:disable Metrics/AbcSize,Metrics/CyclomaticComplexity,Metrics/PerceivedComplexity
+    def merge_results(vector_scores:, sql_product_ids:, sql_products:, filters:)
       results = []
 
       # Strict intersection for category/brand filters
@@ -119,7 +119,7 @@ module Search
           vector_score = vector_scores[product_id] || 0
 
           # Boost if also found in vector search
-          final_score = vector_score > 0 ? (1.0 + vector_score) / 2.0 : 0.8
+          final_score = vector_score.positive? ? (1.0 + vector_score) / 2.0 : 0.8
           results << build_result(product, final_score, 'hybrid')
         end
       else
@@ -135,7 +135,7 @@ module Search
           sql_match = sql_product_ids.include?(product_id)
 
           # Combined scoring
-          final_score = if vector_score > 0 && sql_match
+          final_score = if vector_score.positive? && sql_match
                           (vector_score + 1.0) / 2.0 # Both matched - highest score
                         elsif sql_match
                           0.8 # SQL only

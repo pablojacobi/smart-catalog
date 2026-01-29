@@ -4,7 +4,7 @@ require 'rails_helper'
 
 RSpec.describe Pagination, type: :controller do
   controller(ApplicationController) do
-    include ::Pagination
+    include Pagination
 
     def index
       products = Product.all

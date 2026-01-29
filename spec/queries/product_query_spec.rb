@@ -246,7 +246,7 @@ end
 RSpec.describe ApplicationQuery do
   describe '#default_relation' do
     it 'raises NotImplementedError when called on base class' do
-      query = described_class.allocate
+      query = ApplicationQuery.allocate
 
       expect { query.send(:default_relation) }.to raise_error(NotImplementedError)
     end

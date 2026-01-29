@@ -84,8 +84,7 @@ module Chat
       messages = [
         { role: 'user', content: SYSTEM_PROMPT },
         { role: 'assistant', content: 'Understood. I will format responses clearly.' },
-        { role: 'user',
-          content: "Compare these products based on the user's query: '#{query}'\n\nProducts:\n#{product_data.join("\n\n")}" }
+        { role: 'user', content: "Compare these products based on the user's query: '#{query}'\n\nProducts:\n#{product_data.join("\n\n")}" }
       ]
 
       result = @client.generate_content(messages, temperature: 0.7)
@@ -100,8 +99,7 @@ module Chat
 
     def build_conversational_response(query)
       messages = [
-        { role: 'user',
-          content: 'You are a friendly product catalog assistant. The catalog contains various products with categories, brands, prices, and specifications. Help users find what they need.' },
+        { role: 'user', content: 'You are a friendly product catalog assistant. The catalog contains various products with categories, brands, prices, and specifications. Help users find what they need.' },
         { role: 'assistant', content: "Hello! I'm here to help you find products." },
         { role: 'user', content: query }
       ]
@@ -124,8 +122,7 @@ module Chat
       messages = [
         { role: 'user', content: SYSTEM_PROMPT },
         { role: 'assistant', content: 'Understood.' },
-        { role: 'user',
-          content: "Based on these products, answer: '#{query}'\n\nProducts:\n#{product_data.join("\n\n")}" }
+        { role: 'user', content: "Based on these products, answer: '#{query}'\n\nProducts:\n#{product_data.join("\n\n")}" }
       ]
 
       result = @client.generate_content(messages, temperature: 0.5)
