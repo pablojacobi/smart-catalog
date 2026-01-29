@@ -2,6 +2,11 @@
 
 require 'spec_helper'
 ENV['RAILS_ENV'] ||= 'test'
+
+# IMPORTANT: Remove DATABASE_URL to ensure tests use local test database
+# This prevents tests from accidentally running against production (Supabase)
+ENV.delete('DATABASE_URL')
+
 require_relative '../config/environment'
 
 abort('The Rails environment is running in production mode!') if Rails.env.production?
