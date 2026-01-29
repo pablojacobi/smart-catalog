@@ -110,7 +110,7 @@ module Search
     def generate_query_embedding(query)
       return nil if query.blank?
 
-      service = @embeddings_service || Ai::ProviderService.embeddings_service(query)
+      service = @embeddings_service || Gemini::EmbeddingsService.new(query)
       service.call
     rescue StandardError => e
       Rails.logger.error("[HybridSearch] Embedding generation failed: #{e.message}")

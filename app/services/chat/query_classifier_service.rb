@@ -55,7 +55,7 @@ module Chat
     PROMPT
 
     def initialize(client: nil)
-      @client = client || Ai::ProviderService.client
+      @client = client || Gemini::ClientService.new
     end
 
     # Classify a user query
