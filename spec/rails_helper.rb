@@ -10,7 +10,7 @@ require 'rspec/rails'
 require 'webmock/rspec'
 
 # Load support files
-Rails.root.glob('spec/support/**/*.rb').each { |f| require f }
+Dir[Rails.root.join('spec/support/**/*.rb')].each { |f| require f }
 
 begin
   ActiveRecord::Migration.maintain_test_schema!
@@ -18,8 +18,6 @@ rescue ActiveRecord::PendingMigrationError => e
   abort e.to_s.strip
 end
 
-# Ensure routes are loaded for Devise
-Rails.application.reload_routes!
 
 RSpec.configure do |config|
   config.fixture_paths = [Rails.root.join('spec/fixtures')]
