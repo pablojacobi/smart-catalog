@@ -166,34 +166,34 @@ export default class extends Controller {
   renderMarkdown(text) {
     // Enhanced markdown rendering for product listings
     let html = text
-    
+
     // Tables - must be processed first before line breaks
     html = this.renderTables(html)
-    
+
     // Headers
     html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-3 mb-1">$1</h3>')
     html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-3 mb-1">$1</h2>')
     html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-3 mb-1">$1</h1>')
-    
+
     // Bold (product names)
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-gray-900">$1</strong>')
-    
+
     // Italic (but not inside bold)
     html = html.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>')
-    
+
     // Code
     html = html.replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm">$1</code>')
-    
+
     // Lists - compact styling
     html = html.replace(/^- (.*$)/gim, '<li class="ml-4 text-gray-600 leading-tight">$1</li>')
-    
+
     // Group consecutive list items
     html = html.replace(/(<li[^>]*>.*?<\/li>\n?)+/g, '<ul class="list-disc ml-4 space-y-0.5 my-1">$&</ul>')
-    
+
     // Paragraphs and line breaks
     html = html.replace(/\n\n/g, '</p><p class="mt-2">')
     html = html.replace(/\n/g, '<br>')
-    
+
     return html
   }
 
@@ -202,26 +202,26 @@ export default class extends Controller {
     let inTable = false
     let tableHtml = ''
     let result = []
-    
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim()
-      
+
       // Check if this is a table row (starts and ends with |)
       if (line.startsWith('|') && line.endsWith('|')) {
         if (!inTable) {
           inTable = true
           tableHtml = '<div class="overflow-x-auto my-3"><table class="min-w-full text-sm border-collapse">'
         }
-        
+
         // Check if this is a separator row (contains only |, -, and spaces)
         if (/^\|[\s\-:|]+\|$/.test(line)) {
           // Skip separator row, but mark that headers are done
           continue
         }
-        
+
         const cells = line.split('|').filter(c => c.trim() !== '')
         const isHeader = !tableHtml.includes('<tbody>')
-        
+
         if (isHeader && !tableHtml.includes('<thead>')) {
           tableHtml += '<thead class="bg-gray-100"><tr>'
           cells.forEach(cell => {
@@ -245,12 +245,12 @@ export default class extends Controller {
         result.push(line)
       }
     }
-    
+
     if (inTable) {
       tableHtml += '</tbody></table></div>'
       result.push(tableHtml)
     }
-    
+
     return result.join('\n')
   }
 
