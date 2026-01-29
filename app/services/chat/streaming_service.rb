@@ -134,7 +134,7 @@ module Chat
       previous_products = []
       if conversation.previous_product_ids.any?
         previous_products = Product.where(id: conversation.previous_product_ids)
-          .includes(:brand, :category).to_a
+                                   .includes(:brand, :category).to_a
       end
 
       { previous_products: previous_products }
@@ -142,7 +142,7 @@ module Chat
 
     def build_contextual_response(previous_products, _message)
       # Format previous products as context for follow-up questions
-      markdown = "## Products from previous response (#{previous_products.size})\n"
+      markdown = +"## Products from previous response (#{previous_products.size})\n"
       markdown << "The user is asking about THESE SPECIFIC products:\n\n"
 
       previous_products.each_with_index do |product, index|
