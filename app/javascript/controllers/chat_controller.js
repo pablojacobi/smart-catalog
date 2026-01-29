@@ -125,11 +125,17 @@ export default class extends Controller {
 
       eventSource.addEventListener("done", (event) => {
         const data = JSON.parse(event.data)
+        const isNewConversation = this.conversationIdValue !== data.conversation_id
         this.conversationIdValue = data.conversation_id
         
         // Update conversation title if provided
         if (data.conversation_title && this.hasConversationTitleTarget) {
           this.conversationTitleTarget.textContent = data.conversation_title
+        }
+        
+        // Update sidebar with new/updated conversation
+        if (data.conversation_title && this.hasConversationListTarget) {
+          this.updateConversationList(data.conversation_id, data.conversation_title, isNewConversation)
         }
         
         eventSource.close()
@@ -158,23 +164,30 @@ export default class extends Controller {
   }
 
   renderMarkdown(text) {
-    // Simple markdown rendering
-    return text
+    // Enhanced markdown rendering for product listings
+    let html = text
       // Headers
       .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
       .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-4 mb-2">$1</h2>')
       .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-4 mb-2">$1</h1>')
-      // Bold
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      // Bold (product names)
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-gray-900">$1</strong>')
       // Italic
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>')
       // Code
       .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm">$1</code>')
-      // Lists
-      .replace(/^\- (.*$)/gim, '<li class="ml-4">$1</li>')
-      .replace(/(<li.*<\/li>)\n/g, '<ul class="list-disc my-2">$1</ul>')
-      // Line breaks
+      // Lists with better styling
+      .replace(/^- (.*$)/gim, '<li class="ml-4 text-gray-600">$1</li>')
+      // Line breaks (but not double for paragraph separation)
+      .replace(/\n\n/g, '</p><p class="mt-3">')
       .replace(/\n/g, '<br>')
+    
+    // Wrap in paragraph if not already structured
+    if (!html.startsWith('<')) {
+      html = '<p>' + html + '</p>'
+    }
+    
+    return html
   }
 
   scrollToBottom() {
@@ -185,5 +198,48 @@ export default class extends Controller {
     const div = document.createElement("div")
     div.textContent = text
     return div.innerHTML
+  }
+
+  updateConversationList(conversationId, title, isNew) {
+    const existingItem = this.conversationListTarget.querySelector(`[data-conversation-id="${conversationId}"]`)
+    
+    if (existingItem) {
+      // Update existing conversation title
+      const titleSpan = existingItem.querySelector("span.truncate")
+      if (titleSpan) {
+        titleSpan.textContent = title
+      }
+      // Move to top of list
+      this.conversationListTarget.querySelector(".space-y-1")?.prepend(existingItem)
+    } else if (isNew) {
+      // Add new conversation to top of list
+      const newItem = this.createConversationItem(conversationId, title)
+      const list = this.conversationListTarget.querySelector(".space-y-1")
+      if (list) {
+        list.prepend(newItem)
+      } else {
+        // No conversations yet, create the list
+        const emptyMsg = this.conversationListTarget.querySelector("p")
+        if (emptyMsg) emptyMsg.remove()
+        const newList = document.createElement("div")
+        newList.className = "space-y-1"
+        newList.appendChild(newItem)
+        this.conversationListTarget.appendChild(newList)
+      }
+    }
+  }
+
+  createConversationItem(conversationId, title) {
+    const link = document.createElement("a")
+    link.href = `/chat/${conversationId}`
+    link.className = "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors bg-gray-700"
+    link.setAttribute("data-conversation-id", conversationId)
+    link.innerHTML = `
+      <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+      </svg>
+      <span class="truncate text-sm text-gray-300">${this.escapeHtml(title)}</span>
+    `
+    return link
   }
 }

@@ -21,13 +21,26 @@ module Chat
       - Use the provided product data to give accurate responses
       - If asked about products not in the provided context, say so
 
-      ## Product Data Format
-      Products are provided in this format: [Name | Brand | Category | Price | Stock]
-      Specifications follow on the next line with →
+      ## Response Formatting Rules
+      When listing products, use this EXACT format for each product:
 
-      ## Response Guidelines
-      - For product listings: Use bullet points, include key specs
-      - For comparisons: Create clear side-by-side analysis
+      **Product Name** - Brand
+      - Price: $X,XXX
+      - Category: Category Name
+      - Key specs: CPU, RAM, GPU, etc.
+
+      Example:
+      **MacBook Pro 14** - Apple
+      - Price: $1,999
+      - Category: Laptops
+      - Key specs: M3 Pro, 18GB RAM, 512GB SSD
+
+      DO NOT use asterisks (*) for the product name - use **bold** markdown.
+      DO NOT mix product info and specs on the same bullet point.
+      Keep each product clearly separated with a blank line.
+
+      ## Other Guidelines
+      - For comparisons: Create clear side-by-side analysis with a table or structured comparison
       - For counts/statistics: Use the provided statistics, don't make up numbers
       - For general questions: Be helpful and suggest relevant products
       - Always mention if a product is out of stock
@@ -44,7 +57,7 @@ module Chat
     # @param message [String] User's message
     # @yield [String] Yields each text chunk as it arrives
     # @return [Hash] Final response metadata
-    def call(conversation:, message:)
+    def call(conversation:, message:, &block)
       Rails.logger.info("[StreamingService] Processing: '#{message.truncate(80)}'")
       start_time = Time.current
 
@@ -103,7 +116,9 @@ module Chat
 
     def build_conversation_context(conversation)
       previous_products = []
-      previous_products = Product.where(id: conversation.previous_product_ids).to_a if conversation.previous_product_ids.any?
+      if conversation.previous_product_ids.any?
+        previous_products = Product.where(id: conversation.previous_product_ids).to_a
+      end
 
       { previous_products: previous_products }
     end
