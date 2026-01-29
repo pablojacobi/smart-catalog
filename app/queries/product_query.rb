@@ -93,7 +93,7 @@ class ProductQuery < ApplicationQuery
 
   # Include associations for eager loading
   def with_associations
-    chain(relation.includes(:category, :brand, :document))
+    chain(relation.includes(:category, :brand))
   end
 
   # Paginate results

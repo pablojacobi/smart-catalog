@@ -50,8 +50,7 @@ class HealthController < ApplicationController
     {
       products: Product.count,
       categories: Category.count,
-      brands: Brand.count,
-      documents: Document.count
+      brands: Brand.count
     }
   rescue StandardError
     {}

@@ -2,7 +2,7 @@
 
 source 'https://rubygems.org'
 
-ruby '3.4.1'
+ruby '3.4.8'
 
 # Rails
 gem 'rails', '~> 8.1'
@@ -28,6 +28,13 @@ gem 'tzinfo-data', platforms: %i[windows jruby]
 
 # CORS
 gem 'rack-cors', '~> 2.0'
+
+# Frontend (Hotwire + TailwindCSS)
+gem 'importmap-rails', '~> 2.1'
+gem 'propshaft', '~> 1.1'
+gem 'stimulus-rails', '~> 1.3'
+gem 'tailwindcss-rails', '~> 3.3'
+gem 'turbo-rails', '~> 2.0'
 
 group :development, :test do
   gem 'brakeman', require: false

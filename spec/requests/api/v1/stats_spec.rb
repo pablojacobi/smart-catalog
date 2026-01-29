@@ -12,17 +12,8 @@ RSpec.describe 'Api::V1::Stats' do
     let!(:products) do
       [
         create(:product, category: electronics, brand: apple, status: 'active', in_stock: true, price: 999),
-        create(:product, category: electronics, brand: samsung, status: 'active', in_stock: false, price: 899),
+        create(:product, :with_embedding, category: electronics, brand: samsung, status: 'active', in_stock: false, price: 899),
         create(:product, category: clothing, brand: nil, status: 'inactive', in_stock: true, price: nil)
-      ]
-    end
-
-    let!(:documents) do
-      [
-        create(:document, status: 'completed'),
-        create(:document, :with_embedding, status: 'completed'),
-        create(:document, status: 'pending'),
-        create(:document, status: 'failed')
       ]
     end
 
@@ -46,6 +37,7 @@ RSpec.describe 'Api::V1::Stats' do
       expect(product_stats['active']).to eq(2)
       expect(product_stats['in_stock']).to eq(2)
       expect(product_stats['with_price']).to eq(2)
+      expect(product_stats['with_embedding']).to eq(1)
     end
 
     it 'returns products grouped by category' do
@@ -66,21 +58,6 @@ RSpec.describe 'Api::V1::Stats' do
 
       expect(by_brand['Apple']).to eq(1)
       expect(by_brand['Samsung']).to eq(1)
-    end
-
-    it 'returns document statistics' do
-      get '/api/v1/stats'
-
-      json = response.parsed_body
-      doc_stats = json['stats']['documents']
-
-      # Verify the structure and that our test docs are counted
-      expect(doc_stats['total']).to be >= 4
-      expect(doc_stats['completed']).to be >= 2
-      expect(doc_stats['pending']).to be >= 1
-      expect(doc_stats['failed']).to be >= 1
-      expect(doc_stats).to have_key('processing')
-      expect(doc_stats).to have_key('with_embedding')
     end
 
     it 'returns category and brand counts' do

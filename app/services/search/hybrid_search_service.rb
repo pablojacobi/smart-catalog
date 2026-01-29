@@ -2,14 +2,14 @@
 
 module Search
   # Hybrid search combining vector similarity with SQL filters
-  # Uses intelligent merge strategy for optimal results
+  # Uses Product embeddings directly for semantic search
   class HybridSearchService
     include CallableService
 
     DEFAULT_LIMIT = 50
 
-    def initialize(vector_service: nil, sql_service: nil)
-      @vector_service = vector_service || VectorSearchService.new
+    def initialize(embeddings_service: nil, sql_service: nil)
+      @embeddings_service = embeddings_service
       @sql_service = sql_service || SqlSearchService.new
     end
 
@@ -55,36 +55,48 @@ module Search
     end
 
     def vector_only_search(query, limit)
-      vector_results = @vector_service.call(query, limit: limit)
+      # Generate embedding for the query
+      query_embedding = generate_query_embedding(query)
+      return [] if query_embedding.blank?
 
-      # Get products from matched documents
-      document_ids = vector_results.map { |r| r[:document].id }
-      products = Product.active.where(document_id: document_ids).includes(:category, :brand)
+      # Search products with embeddings using pgvector
+      products = Product.active
+        .with_embedding
+        .includes(:category, :brand)
+        .nearest_neighbors(:embedding, query_embedding, distance: 'cosine')
+        .limit(limit)
 
-      # Map products with document scores
-      doc_scores = vector_results.to_h { |r| [r[:document].id, r[:score]] }
-
-      results = products.map do |product|
-        score = doc_scores[product.document_id] || 0.5
-        build_result(product, score, 'vector')
+      products.map do |product|
+        # Convert distance to similarity score (1 - distance for cosine)
+        score = 1.0 - (product.neighbor_distance || 0)
+        build_result(product, [score, 0].max, 'vector')
       end
-
-      results.sort_by { |r| -r[:score] }.first(limit)
     end
 
     def hybrid_merge(query, filters, limit)
-      # Execute both searches in parallel (conceptually)
-      vector_results = @vector_service.call(query, limit: limit * 2)
+      # Get SQL results
       sql_results = @sql_service.call(filters, limit: limit * 2)
-
-      # Get all relevant products
-      sql_product_ids = sql_results.pluck(:product).map(&:id)
-
-      # Build score maps
-      vector_scores = build_vector_score_map(vector_results)
+      sql_product_ids = sql_results.map { |r| r[:product].id }
       sql_products = sql_results.to_h { |r| [r[:product].id, r[:product]] }
 
-      # Merge strategy depends on filter types
+      # Get vector results
+      vector_scores = {}
+      query_embedding = generate_query_embedding(query)
+
+      if query_embedding.present?
+        products_with_vectors = Product.active
+          .with_embedding
+          .includes(:category, :brand)
+          .nearest_neighbors(:embedding, query_embedding, distance: 'cosine')
+          .limit(limit * 2)
+
+        products_with_vectors.each do |product|
+          score = 1.0 - (product.neighbor_distance || 0)
+          vector_scores[product.id] = [score, 0].max
+        end
+      end
+
+      # Merge results
       merged = merge_results(
         vector_scores: vector_scores,
         sql_product_ids: sql_product_ids,
@@ -95,15 +107,14 @@ module Search
       merged.sort_by { |r| -r[:score] }.first(limit)
     end
 
-    def build_vector_score_map(vector_results)
-      scores = {}
-      vector_results.each do |result|
-        doc = result[:document]
-        doc.products.each do |product|
-          scores[product.id] = [scores[product.id] || 0, result[:score]].max
-        end
-      end
-      scores
+    def generate_query_embedding(query)
+      return nil if query.blank?
+
+      service = @embeddings_service || Gemini::EmbeddingsService.new(query)
+      service.call
+    rescue StandardError => e
+      Rails.logger.error("[HybridSearch] Embedding generation failed: #{e.message}")
+      nil
     end
 
     def merge_results(vector_scores:, sql_product_ids:, sql_products:, filters:)

@@ -3,15 +3,14 @@
 require 'rails_helper'
 
 RSpec.describe Search::HybridSearchService do
-  let(:vector_service) { instance_double(Search::VectorSearchService) }
+  let(:embeddings_service) { instance_double(Gemini::EmbeddingsService) }
   let(:sql_service) { instance_double(Search::SqlSearchService) }
-  let(:service) { described_class.new(vector_service: vector_service, sql_service: sql_service) }
+  let(:service) { described_class.new(embeddings_service: embeddings_service, sql_service: sql_service) }
 
   describe '#call' do
     let(:category) { create(:category) }
-    let(:product1) { create(:product, name: 'MacBook', category: category) }
-    let(:product2) { create(:product, name: 'iPhone', category: category) }
-    let(:document) { create(:document, :with_embedding) }
+    let(:product1) { create(:product, :with_embedding, name: 'MacBook', category: category) }
+    let(:product2) { create(:product, :with_embedding, name: 'iPhone', category: category) }
 
     context 'with only filters (no query)' do
       it 'uses SQL search only' do
@@ -26,40 +25,54 @@ RSpec.describe Search::HybridSearchService do
     end
 
     context 'with only query (no filters)' do
+      let(:query_embedding) { Array.new(768) { 0.1 } }
+      let!(:product_with_similar_embedding) do
+        # Create a product with an embedding similar to the query embedding
+        create(:product, name: 'Laptop', embedding: Array.new(768) { 0.1 })
+      end
+
       before do
-        product1.update!(document: document)
+        allow(embeddings_service).to receive(:call).and_return(query_embedding)
       end
 
       it 'uses vector search only' do
-        vector_results = [{ document: document, score: 0.85, source: 'vector' }]
-        allow(vector_service).to receive(:call).and_return(vector_results)
+        results = service.call(query: 'laptop', filters: {})
+
+        expect(embeddings_service).to have_received(:call)
+        expect(results).not_to be_empty
+        expect(results.first[:source]).to eq('vector')
+      end
+
+      it 'returns empty when no query embedding generated' do
+        allow(embeddings_service).to receive(:call).and_return(nil)
 
         results = service.call(query: 'laptop', filters: {})
 
-        expect(vector_service).to have_received(:call)
-        expect(results.first[:source]).to eq('vector')
+        expect(results).to be_empty
       end
     end
 
     context 'with both query and filters' do
+      let(:query_embedding) { Array.new(768) { rand(-1.0..1.0) } }
+
       before do
-        product1.update!(document: document)
-        product2.update!(document: document)
+        allow(embeddings_service).to receive(:call).and_return(query_embedding)
+        # Create products with embeddings
+        product1
+        product2
       end
 
       it 'combines both search strategies' do
-        vector_results = [{ document: document, score: 0.85, source: 'vector' }]
         sql_results = [
           { product: product1, score: 1.0, source: 'sql' },
           { product: product2, score: 1.0, source: 'sql' }
         ]
 
-        allow(vector_service).to receive(:call).and_return(vector_results)
         allow(sql_service).to receive(:call).and_return(sql_results)
 
         results = service.call(query: 'laptop', filters: { category: 'electronics' })
 
-        expect(vector_service).to have_received(:call)
+        expect(embeddings_service).to have_received(:call)
         expect(sql_service).to have_received(:call)
         expect(results.first[:source]).to eq('hybrid')
       end
@@ -78,19 +91,15 @@ RSpec.describe Search::HybridSearchService do
     end
 
     context 'with flexible deduplication (price filters)' do
-      let(:doc1) { create(:document, :with_embedding) }
-      let(:doc2) { create(:document, :with_embedding) }
-      let!(:product_in_both) { create(:product, name: 'Common Product', document: doc1, price: 100) }
-      let!(:product_vector_only) { create(:product, name: 'Vector Only', document: doc2, price: 200) }
+      # Use consistent embeddings for predictable test results
+      let(:query_embedding) { Array.new(768) { 0.5 } }
+      let(:similar_embedding) { Array.new(768) { 0.5 } }
+      let!(:product_in_both) { create(:product, name: 'Common Product', price: 100, embedding: similar_embedding) }
+      let!(:product_vector_only) { create(:product, name: 'Vector Only', price: 200, embedding: similar_embedding) }
       let!(:product_sql_only) { create(:product, name: 'SQL Only', price: 150) }
 
       before do
-        # Setup vector results to return products from docs
-        vector_results = [
-          { document: doc1, score: 0.9, source: 'vector' },
-          { document: doc2, score: 0.7, source: 'vector' }
-        ]
-        allow(vector_service).to receive(:call).and_return(vector_results)
+        allow(embeddings_service).to receive(:call).and_return(query_embedding)
 
         # SQL results with price filter - includes some overlap
         sql_results = [
@@ -137,14 +146,15 @@ RSpec.describe Search::HybridSearchService do
     end
 
     context 'with strict category filter' do
-      let(:doc) { create(:document, :with_embedding) }
-      let!(:product) { create(:product, name: 'Test Product', document: doc, category: category) }
+      let(:query_embedding) { Array.new(768) { rand(-1.0..1.0) } }
+      let!(:product) { create(:product, :with_embedding, name: 'Test Product', category: category) }
+
+      before do
+        allow(embeddings_service).to receive(:call).and_return(query_embedding)
+      end
 
       it 'uses strict deduplication when filtering by category' do
-        vector_results = [{ document: doc, score: 0.9, source: 'vector' }]
         sql_results = [{ product: product, score: 1.0, source: 'sql' }]
-
-        allow(vector_service).to receive(:call).and_return(vector_results)
         allow(sql_service).to receive(:call).and_return(sql_results)
 
         results = service.call(
@@ -155,6 +165,18 @@ RSpec.describe Search::HybridSearchService do
         # Should find the product that matches both
         expect(results).not_to be_empty
         expect(results.first[:product].name).to eq('Test Product')
+      end
+    end
+
+    context 'when embedding service fails' do
+      before do
+        allow(embeddings_service).to receive(:call).and_raise(StandardError.new('API error'))
+      end
+
+      it 'returns empty results gracefully' do
+        results = service.call(query: 'laptop', filters: {})
+
+        expect(results).to be_empty
       end
     end
   end

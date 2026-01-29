@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM ruby:3.4.1-slim
+FROM ruby:3.4.8-slim
 
 # Install dependencies
 RUN apt-get update -qq && \

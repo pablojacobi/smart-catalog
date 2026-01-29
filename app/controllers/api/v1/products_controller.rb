@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module API
+module Api
   module V1
     class ProductsController < BaseController
       # GET /api/v1/products
@@ -18,7 +18,7 @@ module API
 
       # GET /api/v1/products/:id
       def show
-        product = Product.includes(:category, :brand, :document).find(params[:id])
+        product = Product.includes(:category, :brand).find(params[:id])
 
         render_resource(product, blueprint: ProductBlueprint, view: :extended)
       end

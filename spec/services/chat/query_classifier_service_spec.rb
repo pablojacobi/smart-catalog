@@ -10,8 +10,7 @@ RSpec.describe Chat::QueryClassifierService do
       response_text = {
         query_type: 'listing',
         filters: { category: 'electronics' },
-        search_query: 'laptops',
-        needs_document_search: false
+        search_query: 'laptops'
       }.to_json
 
       stub_gemini_chat(response_text)
@@ -26,8 +25,7 @@ RSpec.describe Chat::QueryClassifierService do
       response_text = {
         query_type: 'count',
         filters: {},
-        search_query: 'products',
-        needs_document_search: false
+        search_query: 'products'
       }.to_json
 
       stub_gemini_chat(response_text)
@@ -41,8 +39,7 @@ RSpec.describe Chat::QueryClassifierService do
       response_text = {
         query_type: 'comparison',
         filters: {},
-        search_query: 'macbook vs dell',
-        needs_document_search: true
+        search_query: 'macbook vs dell'
       }.to_json
 
       stub_gemini_chat(response_text)
@@ -56,8 +53,7 @@ RSpec.describe Chat::QueryClassifierService do
       response_text = {
         query_type: 'listing',
         filters: { min_price: 100, max_price: 500 },
-        search_query: 'phones',
-        needs_document_search: false
+        search_query: 'phones'
       }.to_json
 
       stub_gemini_chat(response_text)
@@ -87,8 +83,7 @@ RSpec.describe Chat::QueryClassifierService do
       response_text = {
         query_type: 'contextual',
         filters: { max_price: 1000 },
-        search_query: '',
-        needs_document_search: false
+        search_query: ''
       }.to_json
 
       stub_gemini_chat(response_text)
@@ -118,8 +113,7 @@ RSpec.describe Chat::QueryClassifierService do
         response_text = {
           query_type: 'listing',
           filters: { min_price: 'invalid', max_price: 'not a number' },
-          search_query: 'products',
-          needs_document_search: false
+          search_query: 'products'
         }.to_json
 
         stub_gemini_chat(response_text)

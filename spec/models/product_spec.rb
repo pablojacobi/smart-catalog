@@ -14,7 +14,6 @@ RSpec.describe Product do
   end
 
   describe 'associations' do
-    it { is_expected.to belong_to(:document).optional }
     it { is_expected.to belong_to(:category).optional }
     it { is_expected.to belong_to(:brand).optional }
   end

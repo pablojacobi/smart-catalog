@@ -20,10 +20,9 @@ FactoryBot.define do
 
     association :category
     association :brand
-    association :document
 
-    trait :without_document do
-      document { nil }
+    trait :with_embedding do
+      embedding { Array.new(768) { rand(-1.0..1.0) } }
     end
 
     trait :out_of_stock do

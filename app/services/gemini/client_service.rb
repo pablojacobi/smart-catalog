@@ -31,6 +31,26 @@ module Gemini
       parse_generate_response(response)
     end
 
+    # Stream content generation (yields chunks as they arrive)
+    # @param messages [Array<Hash>] Array of message hashes with :role and :content
+    # @param model [String] Model to use (defaults to config)
+    # @param temperature [Float] Temperature for generation
+    # @param max_tokens [Integer] Maximum tokens to generate
+    # @yield [String] Yields each text chunk as it arrives
+    def stream_content(messages, model: nil, temperature: 0.7, max_tokens: 2048, &)
+      model ||= @config[:model]
+
+      body = {
+        contents: format_messages(messages),
+        generationConfig: {
+          temperature: temperature,
+          maxOutputTokens: max_tokens
+        }
+      }
+
+      stream_generate("/models/#{model}:streamGenerateContent", body, &)
+    end
+
     # Generate embeddings
     def embed(text, model: nil)
       model ||= @config[:embedding_model]
@@ -49,7 +69,7 @@ module Gemini
     private
 
     def connection
-      @connection ||= Faraday.new(url: @base_url) do |f|
+      @connection ||= Faraday.new do |f|
         f.request :json
         f.response :json
         f.options.timeout = @config[:timeout]
@@ -60,9 +80,10 @@ module Gemini
 
     def post(endpoint, body)
       retries = 0
+      full_url = "#{@base_url}#{endpoint}?key=#{@api_key}"
 
       begin
-        response = connection.post("#{endpoint}?key=#{@api_key}") do |req|
+        response = connection.post(full_url) do |req|
           req.body = body
         end
 
@@ -74,6 +95,55 @@ module Gemini
           retry
         end
         raise SmartCatalog::ServiceUnavailableError, "Gemini API unavailable: #{e.message}"
+      end
+    end
+
+    def stream_generate(endpoint, body, &)
+      url = "#{@base_url}#{endpoint}?key=#{@api_key}&alt=sse"
+      buffer = +''
+
+      http_stream_request(url, body) do |chunk|
+        buffer << chunk
+        process_sse_buffer(buffer, &)
+      end
+    rescue Faraday::TimeoutError, Faraday::ConnectionFailed, Errno::ECONNRESET => e
+      raise SmartCatalog::ServiceUnavailableError, "Gemini streaming unavailable: #{e.message}"
+    end
+
+    def http_stream_request(url, body, &)
+      uri = URI(url)
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+      http.read_timeout = 120
+      http.open_timeout = 10
+
+      request = Net::HTTP::Post.new(uri)
+      request['Content-Type'] = 'application/json'
+      request.body = body.to_json
+
+      http.request(request) do |response|
+        response.read_body(&)
+      end
+    end
+
+    def process_sse_buffer(buffer)
+      # Handle both \r\n and \n line endings
+      while (line_end = buffer.index(/\r?\n/))
+        match = buffer.match(/\r?\n/)
+        line = buffer.slice!(0, line_end + match[0].length).strip
+        next if line.empty?
+        next unless line.start_with?('data: ')
+
+        json_str = line[6..]
+        next if json_str == '[DONE]'
+
+        begin
+          data = JSON.parse(json_str)
+          text = data.dig('candidates', 0, 'content', 'parts', 0, 'text')
+          yield text if text
+        rescue JSON::ParserError
+          # Ignore malformed JSON chunks
+        end
       end
     end
 
@@ -90,12 +160,18 @@ module Gemini
       when 500..599
         raise SmartCatalog::ServiceUnavailableError, "Gemini service error: #{extract_error(response)}"
       else
-        raise SmartCatalog::Error, "Unexpected response: #{response.status}"
+        raise SmartCatalog::Error, "Unexpected response: #{response.status} - #{extract_error(response)}"
       end
     end
 
     def extract_error(response)
-      response.body.dig('error', 'message') || response.body.to_s[0, 200]
+      return '' if response.body.blank?
+
+      if response.body.is_a?(Hash)
+        response.body.dig('error', 'message') || response.body.to_s[0, 200]
+      else
+        response.body.to_s[0, 200]
+      end
     end
 
     def format_messages(messages)
@@ -110,7 +186,7 @@ module Gemini
 
     def parse_generate_response(response)
       candidates = response['candidates'] || []
-      return nil if candidates.empty?
+      return { content: nil, finish_reason: nil, usage: nil } if candidates.empty?
 
       content = candidates.first.dig('content', 'parts', 0, 'text')
 

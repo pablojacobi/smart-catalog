@@ -42,7 +42,6 @@ RSpec.describe 'Health Check' do
         expect(json['stats']).to have_key('products')
         expect(json['stats']).to have_key('categories')
         expect(json['stats']).to have_key('brands')
-        expect(json['stats']).to have_key('documents')
       end
     end
 
