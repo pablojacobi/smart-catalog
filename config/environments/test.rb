@@ -4,7 +4,8 @@ require 'active_support/core_ext/integer/time'
 
 Rails.application.configure do
   config.enable_reloading = false
-  config.eager_load = ENV['CI'].present?
+  # Disable eager_load to avoid FrozenError with Devise in Rails 8.1
+  config.eager_load = false
   config.consider_all_requests_local = true
   config.action_controller.perform_caching = false
   config.cache_store = :null_store

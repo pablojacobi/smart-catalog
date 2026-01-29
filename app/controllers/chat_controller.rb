@@ -4,15 +4,19 @@
 class ChatController < ApplicationController
   include ActionController::Live
 
+  before_action :authenticate_user!
+
   # Skip CSRF for SSE streaming endpoint
   skip_before_action :verify_authenticity_token, only: [:stream]
 
   def index
-    @conversation = Conversation.create!
+    @conversation = current_user.conversations.create!
+    @conversations = current_user.conversations.recent.limit(20)
   end
 
   def show
-    @conversation = Conversation.find(params[:id])
+    @conversation = current_user.conversations.find(params[:id])
+    @conversations = current_user.conversations.recent.limit(20)
   end
 
   # SSE endpoint for streaming chat responses
@@ -34,9 +38,13 @@ class ChatController < ApplicationController
         write_sse_event('chunk', chunk)
       end
 
+      # Generate title for new conversations
+      generate_title(conversation) if conversation.title.blank? && conversation.messages.count == 2
+
       # Send completion event with metadata
       write_sse_event('done', {
         conversation_id: result[:conversation_id],
+        conversation_title: conversation.reload.display_title,
         product_count: result[:product_ids].length,
         duration_ms: result[:duration_ms]
       }.to_json)
@@ -52,10 +60,27 @@ class ChatController < ApplicationController
 
   def find_or_create_conversation
     if params[:conversation_id].present?
-      Conversation.find(params[:conversation_id])
+      current_user.conversations.find(params[:conversation_id])
     else
-      Conversation.create!
+      current_user.conversations.create!
     end
+  end
+
+  def generate_title(conversation)
+    first_message = conversation.first_user_message&.content
+    return if first_message.blank?
+
+    client = Gemini::ClientService.new
+    prompt = <<~PROMPT.squish
+      Generate a very short title (max 5 words) for a conversation that starts with:
+      '#{first_message.truncate(100)}'. Return only the title, no quotes or explanation.
+    PROMPT
+
+    result = client.generate_content([{ role: 'user', content: prompt }], temperature: 0.3, max_tokens: 20)
+    title = result[:content]&.strip&.gsub(/^["']|["']$/, '')
+    conversation.update!(title: title) if title.present?
+  rescue StandardError => e
+    Rails.logger.warn("[ChatController] Failed to generate title: #{e.message}")
   end
 
   def write_sse_event(event, data)

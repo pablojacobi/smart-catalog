@@ -3,41 +3,62 @@
 require 'rails_helper'
 
 RSpec.describe 'Chat UI' do
-  describe 'GET /chat' do
-    it 'renders the chat interface' do
-      get '/chat'
+  let(:user) { create(:user) }
 
-      expect(response).to have_http_status(:ok)
-      expect(response.body).to include('SmartCatalog')
-      expect(response.body).to include('data-controller="chat"')
+  describe 'GET /chat' do
+    context 'when authenticated' do
+      before { sign_in user }
+
+      it 'renders the chat interface' do
+        get '/chat'
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include('SmartCatalog')
+        expect(response.body).to include('data-controller="chat"')
+      end
+
+      it 'creates a new conversation for the user' do
+        expect { get '/chat' }.to change(Conversation, :count).by(1)
+        expect(Conversation.last.user).to eq(user)
+      end
     end
 
-    it 'creates a new conversation' do
-      expect { get '/chat' }.to change(Conversation, :count).by(1)
+    context 'when not authenticated' do
+      it 'redirects to sign in' do
+        get '/chat'
+
+        expect(response).to redirect_to(new_user_session_path)
+      end
     end
   end
 
   describe 'GET /chat/:id' do
-    let!(:conversation) { create(:conversation) }
+    let!(:conversation) { create(:conversation, user: user) }
 
-    it 'finds the conversation' do
-      # Verify the conversation exists and can be loaded
-      expect(Conversation.find(conversation.id)).to eq(conversation)
+    before { sign_in user }
+
+    it 'renders the conversation' do
+      get chat_conversation_path(conversation)
+
+      expect(response).to have_http_status(:ok)
     end
 
-    it 'does not create a new conversation' do
-      initial_count = Conversation.count
-      # The show action should not create a conversation
-      Conversation.find(conversation.id)
-      expect(Conversation.count).to eq(initial_count)
+    it 'does not allow access to other users conversations' do
+      other_user = create(:user)
+      other_conversation = create(:conversation, user: other_user)
+
+      # RecordNotFound is rescued and returns 404 in Rails
+      get chat_conversation_path(other_conversation)
+      expect(response).to have_http_status(:not_found)
     end
   end
 
   describe 'GET /chat/stream' do
-    let(:conversation) { create(:conversation) }
+    let!(:conversation) { create(:conversation, user: user) }
     let(:streaming_service) { instance_double(Chat::StreamingService) }
 
     before do
+      sign_in user
       allow(Chat::StreamingService).to receive(:new).and_return(streaming_service)
     end
 
@@ -89,10 +110,11 @@ RSpec.describe 'Chat UI' do
         end
       end
 
-      it 'creates a new conversation' do
+      it 'creates a new conversation for the user' do
         expect do
           get '/chat/stream', params: { message: 'test' }
         end.to change(Conversation, :count).by(1)
+        expect(Conversation.last.user).to eq(user)
       end
     end
   end

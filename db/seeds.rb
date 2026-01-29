@@ -12,6 +12,14 @@ if Rails.env.test?
   return
 end
 
+# Create admin user
+puts 'Creating admin user...'
+admin = User.find_or_create_by!(email: 'pablo@test.com') do |u|
+  u.password = '1%8/4&AZ'
+  u.password_confirmation = '1%8/4&AZ'
+end
+puts "✓ Admin user created: #{admin.email}"
+
 puts 'Seeding database from JSON...'
 
 # Load JSON data

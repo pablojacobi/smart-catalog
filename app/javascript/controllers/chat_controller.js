@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["messages", "input", "sendButton", "welcome"]
+  static targets = ["messages", "input", "sendButton", "welcome", "conversationTitle", "conversationList"]
   static values = { conversationId: String }
 
   connect() {
@@ -126,6 +126,12 @@ export default class extends Controller {
       eventSource.addEventListener("done", (event) => {
         const data = JSON.parse(event.data)
         this.conversationIdValue = data.conversation_id
+        
+        // Update conversation title if provided
+        if (data.conversation_title && this.hasConversationTitleTarget) {
+          this.conversationTitleTarget.textContent = data.conversation_title
+        }
+        
         eventSource.close()
         this.stopStreaming()
       })

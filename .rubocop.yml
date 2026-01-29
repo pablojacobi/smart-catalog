@@ -24,6 +24,7 @@ Layout/LineLength:
     - 'spec/**/*'
     - 'app/services/concerns/service_result.rb'
     - 'app/services/chat/**/*'
+    - 'config/initializers/devise.rb'
 
 Layout/MultilineMethodCallIndentation:
   EnforcedStyle: indented

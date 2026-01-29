@@ -26,6 +26,7 @@ RSpec.configure do |config|
 
   config.include FactoryBot::Syntax::Methods
   config.include ActiveSupport::Testing::TimeHelpers
+  config.include Devise::Test::IntegrationHelpers, type: :request
 
   # Set default host for request specs
   config.before(:each, type: :request) do

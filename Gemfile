@@ -29,6 +29,9 @@ gem 'tzinfo-data', platforms: %i[windows jruby]
 # CORS
 gem 'rack-cors', '~> 2.0'
 
+# Authentication
+gem 'devise', '~> 4.9'
+
 # Frontend (Hotwire + TailwindCSS)
 gem 'importmap-rails', '~> 2.1'
 gem 'propshaft', '~> 1.1'
