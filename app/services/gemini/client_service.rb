@@ -37,7 +37,7 @@ module Gemini
     # @param temperature [Float] Temperature for generation
     # @param max_tokens [Integer] Maximum tokens to generate
     # @yield [String] Yields each text chunk as it arrives
-    def stream_content(messages, model: nil, temperature: 0.7, max_tokens: 2048, &block)
+    def stream_content(messages, model: nil, temperature: 0.7, max_tokens: 2048, &)
       model ||= @config[:model]
 
       body = {
@@ -48,7 +48,7 @@ module Gemini
         }
       }
 
-      stream_generate("/models/#{model}:streamGenerateContent", body, &block)
+      stream_generate("/models/#{model}:streamGenerateContent", body, &)
     end
 
     # Generate embeddings
@@ -94,23 +94,23 @@ module Gemini
           sleep(2**retries)
           retry
         end
-        raise SmartCatalog::ServiceUnavailableError.new("Gemini API unavailable: #{e.message}")
+        raise SmartCatalog::ServiceUnavailableError, "Gemini API unavailable: #{e.message}"
       end
     end
 
-    def stream_generate(endpoint, body, &block)
+    def stream_generate(endpoint, body, &)
       url = "#{@base_url}#{endpoint}?key=#{@api_key}&alt=sse"
       buffer = +''
 
       http_stream_request(url, body) do |chunk|
         buffer << chunk
-        process_sse_buffer(buffer, &block)
+        process_sse_buffer(buffer, &)
       end
     rescue Faraday::TimeoutError, Faraday::ConnectionFailed, Errno::ECONNRESET => e
-      raise SmartCatalog::ServiceUnavailableError.new("Gemini streaming unavailable: #{e.message}")
+      raise SmartCatalog::ServiceUnavailableError, "Gemini streaming unavailable: #{e.message}"
     end
 
-    def http_stream_request(url, body)
+    def http_stream_request(url, body, &)
       uri = URI(url)
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = true
@@ -122,30 +122,27 @@ module Gemini
       request.body = body.to_json
 
       http.request(request) do |response|
-        response.read_body do |chunk|
-          yield chunk
-        end
+        response.read_body(&)
       end
     end
 
-    def process_sse_buffer(buffer, &block)
+    def process_sse_buffer(buffer)
       # Handle both \r\n and \n line endings
       while (line_end = buffer.index(/\r?\n/))
         match = buffer.match(/\r?\n/)
         line = buffer.slice!(0, line_end + match[0].length).strip
         next if line.empty?
+        next unless line.start_with?('data: ')
 
-        if line.start_with?('data: ')
-          json_str = line[6..]
-          next if json_str == '[DONE]'
+        json_str = line[6..]
+        next if json_str == '[DONE]'
 
-          begin
-            data = JSON.parse(json_str)
-            text = data.dig('candidates', 0, 'content', 'parts', 0, 'text')
-            yield text if text && block
-          rescue JSON::ParserError
-            # Ignore malformed JSON chunks
-          end
+        begin
+          data = JSON.parse(json_str)
+          text = data.dig('candidates', 0, 'content', 'parts', 0, 'text')
+          yield text if text
+        rescue JSON::ParserError
+          # Ignore malformed JSON chunks
         end
       end
     end
@@ -155,20 +152,20 @@ module Gemini
       when 200..299
         response.body
       when 400
-        raise SmartCatalog::ValidationError.new("Bad request: #{extract_error(response)}")
+        raise SmartCatalog::ValidationError, "Bad request: #{extract_error(response)}"
       when 401, 403
-        raise SmartCatalog::AuthenticationError.new("Authentication failed: #{extract_error(response)}")
+        raise SmartCatalog::AuthenticationError, "Authentication failed: #{extract_error(response)}"
       when 429
-        raise SmartCatalog::RateLimitError.new("Rate limit exceeded: #{extract_error(response)}")
+        raise SmartCatalog::RateLimitError, "Rate limit exceeded: #{extract_error(response)}"
       when 500..599
-        raise SmartCatalog::ServiceUnavailableError.new("Gemini service error: #{extract_error(response)}")
+        raise SmartCatalog::ServiceUnavailableError, "Gemini service error: #{extract_error(response)}"
       else
-        raise SmartCatalog::Error.new("Unexpected response: #{response.status} - #{extract_error(response)}")
+        raise SmartCatalog::Error, "Unexpected response: #{response.status} - #{extract_error(response)}"
       end
     end
 
     def extract_error(response)
-      return '' if response.body.nil? || response.body.empty?
+      return '' if response.body.blank?
 
       if response.body.is_a?(Hash)
         response.body.dig('error', 'message') || response.body.to_s[0, 200]

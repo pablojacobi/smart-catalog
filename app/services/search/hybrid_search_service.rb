@@ -61,12 +61,12 @@ module Search
 
       # Search products with embeddings using pgvector
       products = Product.active
-                        .with_embedding
-                        .includes(:category, :brand)
-                        .nearest_neighbors(:embedding, query_embedding, distance: 'cosine')
-                        .limit(limit)
+        .with_embedding
+        .includes(:category, :brand)
+        .nearest_neighbors(:embedding, query_embedding, distance: 'cosine')
+        .limit(limit)
 
-      products.map.with_index do |product, index|
+      products.map do |product|
         # Convert distance to similarity score (1 - distance for cosine)
         score = 1.0 - (product.neighbor_distance || 0)
         build_result(product, [score, 0].max, 'vector')
@@ -85,10 +85,10 @@ module Search
 
       if query_embedding.present?
         products_with_vectors = Product.active
-                                       .with_embedding
-                                       .includes(:category, :brand)
-                                       .nearest_neighbors(:embedding, query_embedding, distance: 'cosine')
-                                       .limit(limit * 2)
+          .with_embedding
+          .includes(:category, :brand)
+          .nearest_neighbors(:embedding, query_embedding, distance: 'cosine')
+          .limit(limit * 2)
 
         products_with_vectors.each do |product|
           score = 1.0 - (product.neighbor_distance || 0)
@@ -130,7 +130,7 @@ module Search
           vector_score = vector_scores[product_id] || 0
 
           # Boost if also found in vector search
-          final_score = vector_score > 0 ? (1.0 + vector_score) / 2.0 : 0.8
+          final_score = vector_score.positive? ? (1.0 + vector_score) / 2.0 : 0.8
           results << build_result(product, final_score, 'hybrid')
         end
       else
@@ -146,7 +146,7 @@ module Search
           sql_match = sql_product_ids.include?(product_id)
 
           # Combined scoring
-          final_score = if vector_score > 0 && sql_match
+          final_score = if vector_score.positive? && sql_match
                           (vector_score + 1.0) / 2.0 # Both matched - highest score
                         elsif sql_match
                           0.8 # SQL only

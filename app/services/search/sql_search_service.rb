@@ -71,8 +71,7 @@ module Search
       scope = apply_price_filters(scope, filters[:min_price], filters[:max_price])
       scope = apply_text_search(scope, filters[:query])
       scope = apply_stock_filter(scope, filters[:in_stock])
-      scope = apply_specification_filters(scope, filters[:specifications])
-      scope
+      apply_specification_filters(scope, filters[:specifications])
     end
 
     def apply_category_filter(scope, category)
@@ -123,8 +122,8 @@ module Search
     end
 
     def apply_price_filters(scope, min_price, max_price)
-      scope = scope.where('price >= ?', min_price) if min_price.present?
-      scope = scope.where('price <= ?', max_price) if max_price.present?
+      scope = scope.where(price: min_price..) if min_price.present?
+      scope = scope.where(price: ..max_price) if max_price.present?
       scope
     end
 
@@ -151,7 +150,7 @@ module Search
 
         # Build OR condition for all possible keys with ILIKE matching
         conditions = possible_keys.map do |k|
-          scope.where("specifications->>? ILIKE ?", k, "%#{value}%")
+          scope.where('specifications->>? ILIKE ?', k, "%#{value}%")
         end
 
         # Combine with OR
@@ -171,7 +170,7 @@ module Search
         'graphics' => ['gpu'],
         'video_card' => ['gpu'],
         'processor' => ['cpu'],
-        'memory' => ['ram_gb', 'RAM'],
+        'memory' => %w[ram_gb RAM],
         'operating_system' => ['os']
       }
 
@@ -179,9 +178,7 @@ module Search
       variations = [key_str, key_str.downcase, key_str.upcase]
 
       # Add mapped keys if applicable
-      if key_mappings[key_str.downcase]
-        variations.concat(key_mappings[key_str.downcase])
-      end
+      variations.concat(key_mappings[key_str.downcase]) if key_mappings[key_str.downcase]
 
       variations.uniq
     end

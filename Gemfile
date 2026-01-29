@@ -2,7 +2,7 @@
 
 source 'https://rubygems.org'
 
-ruby '3.4.1'
+ruby '3.4.8'
 
 # Rails
 gem 'rails', '~> 8.1'
