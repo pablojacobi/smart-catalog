@@ -72,7 +72,9 @@ module Chat
 
     def build_context(conversation)
       previous_products = []
-      previous_products = Product.where(id: conversation.previous_product_ids).to_a if conversation.previous_product_ids.any?
+      if conversation.previous_product_ids.any?
+        previous_products = Product.where(id: conversation.previous_product_ids).to_a
+      end
 
       { previous_products: previous_products }
     end
@@ -99,7 +101,9 @@ module Chat
       # Filter previous products based on new criteria
       products = context[:previous_products] || []
 
-      products = apply_contextual_filters(products, classification[:filters]) if classification[:filters].present?
+      if classification[:filters].present?
+        products = apply_contextual_filters(products, classification[:filters])
+      end
 
       { products: products, context: context }
     end
@@ -110,7 +114,7 @@ module Chat
         filters: classification[:filters]
       )
 
-      products = results.pluck(:product)
+      products = results.map { |r| r[:product] }
       { products: products, context: {} }
     end
 
@@ -124,12 +128,8 @@ module Chat
       return false if filters[:min_price] && product.price && product.price < filters[:min_price]
       return false if filters[:max_price] && product.price && product.price > filters[:max_price]
       return false if filters[:in_stock] == true && !product.in_stock
-      if filters[:category] && product.category&.slug != filters[:category] && product.category&.name&.downcase != filters[:category]&.downcase
-        return false
-      end
-      if filters[:brand] && product.brand&.slug != filters[:brand] && product.brand&.name&.downcase != filters[:brand]&.downcase
-        return false
-      end
+      return false if filters[:category] && product.category&.slug != filters[:category] && product.category&.name&.downcase != filters[:category]&.downcase
+      return false if filters[:brand] && product.brand&.slug != filters[:brand] && product.brand&.name&.downcase != filters[:brand]&.downcase
 
       true
     end

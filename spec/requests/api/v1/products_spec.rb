@@ -30,7 +30,7 @@ RSpec.describe 'Api::V1::Products' do
       get '/api/v1/products', params: { category: 'electronics' }
 
       json = response.parsed_body
-      names = json['data'].pluck('name')
+      names = json['data'].map { |p| p['name'] }
 
       expect(names).to include('MacBook Pro', 'iPhone 15')
       expect(names).not_to include('T-Shirt')
@@ -40,7 +40,7 @@ RSpec.describe 'Api::V1::Products' do
       get '/api/v1/products', params: { brand: 'apple' }
 
       json = response.parsed_body
-      names = json['data'].pluck('name')
+      names = json['data'].map { |p| p['name'] }
 
       expect(names).to include('MacBook Pro', 'iPhone 15')
       expect(names).not_to include('Galaxy S24')
@@ -50,7 +50,7 @@ RSpec.describe 'Api::V1::Products' do
       get '/api/v1/products', params: { min_price: 900, max_price: 1500 }
 
       json = response.parsed_body
-      names = json['data'].pluck('name')
+      names = json['data'].map { |p| p['name'] }
 
       expect(names).to include('iPhone 15')
       expect(names).not_to include('MacBook Pro', 'Galaxy S24')
@@ -60,7 +60,7 @@ RSpec.describe 'Api::V1::Products' do
       get '/api/v1/products', params: { in_stock: true }
 
       json = response.parsed_body
-      names = json['data'].pluck('name')
+      names = json['data'].map { |p| p['name'] }
 
       expect(names).to include('MacBook Pro', 'iPhone 15')
       expect(names).not_to include('Galaxy S24')

@@ -22,7 +22,7 @@ RSpec.describe 'Api::V1::Documents' do
       get '/api/v1/documents', params: { status: 'completed' }
 
       json = response.parsed_body
-      filenames = json['data'].pluck('filename')
+      filenames = json['data'].map { |d| d['filename'] }
 
       expect(filenames).to include('catalog.pdf')
       expect(filenames).not_to include('new.pdf', 'broken.pdf')

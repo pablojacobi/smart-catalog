@@ -10,4 +10,6 @@ Rails.application.config.gemini = {
 }
 
 # Validate in production
-raise 'GEMINI_API_KEY is required in production' if Rails.env.production? && Rails.application.config.gemini[:api_key].blank?
+if Rails.env.production? && Rails.application.config.gemini[:api_key].blank?
+  raise 'GEMINI_API_KEY is required in production'
+end

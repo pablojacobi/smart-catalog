@@ -33,9 +33,9 @@ module Search
       # neighbor_distance returns cosine distance (0 = identical, 2 = opposite)
       # Convert to similarity: 1 - (distance / 2) for 0-1 scale
       results = Document
-        .where.not(embedding: nil)
-        .nearest_neighbors(:embedding, embedding, distance: 'cosine')
-        .limit(limit * 2) # Fetch extra to filter by score
+                .where.not(embedding: nil)
+                .nearest_neighbors(:embedding, embedding, distance: 'cosine')
+                .limit(limit * 2) # Fetch extra to filter by score
 
       # Filter and format results
       formatted = results.filter_map do |doc|

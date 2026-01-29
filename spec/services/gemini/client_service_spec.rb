@@ -7,12 +7,12 @@ RSpec.describe Gemini::ClientService do
 
   before do
     allow(Rails.application.config).to receive(:gemini).and_return({
-                                                                     api_key: 'test-api-key',
-                                                                     model: 'gemini-1.5-flash',
-                                                                     embedding_model: 'text-embedding-004',
-                                                                     base_url: 'https://generativelanguage.googleapis.com/v1beta',
-                                                                     timeout: 60
-                                                                   })
+      api_key: 'test-api-key',
+      model: 'gemini-1.5-flash',
+      embedding_model: 'text-embedding-004',
+      base_url: 'https://generativelanguage.googleapis.com/v1beta',
+      timeout: 60
+    })
   end
 
   describe '#generate_content' do

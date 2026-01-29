@@ -3,7 +3,7 @@
 # Seed data for SmartCatalog
 # Run with: docker-compose exec app rails db:seed
 
-Rails.logger.debug 'Seeding database...'
+puts 'Seeding database...'
 
 # Create categories
 categories = [
@@ -19,7 +19,7 @@ categories = [
   end
 end
 
-Rails.logger.debug { "Created #{categories.count} categories" }
+puts "Created #{categories.count} categories"
 
 # Create brands
 brands = [
@@ -39,7 +39,7 @@ brands = [
   end
 end
 
-Rails.logger.debug { "Created #{brands.count} brands" }
+puts "Created #{brands.count} brands"
 
 # Create sample products
 products_data = [
@@ -202,6 +202,6 @@ products_data.each do |data|
   end
 end
 
-Rails.logger.debug { "Created #{Product.count} products" }
+puts "Created #{Product.count} products"
 
-Rails.logger.debug 'Seeding complete!'
+puts 'Seeding complete!'

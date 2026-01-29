@@ -162,12 +162,12 @@ RSpec.describe ProductQuery do
   describe 'chaining' do
     it 'chains multiple filters' do
       results = described_class.new
-        .active
-        .by_category('electronics')
-        .by_brand('apple')
-        .price_range(500, 1500)
-        .in_stock(true)
-        .call
+                               .active
+                               .by_category('electronics')
+                               .by_brand('apple')
+                               .price_range(500, 1500)
+                               .in_stock(true)
+                               .call
 
       expect(results).to eq([iphone])
     end
@@ -246,7 +246,7 @@ end
 RSpec.describe ApplicationQuery do
   describe '#default_relation' do
     it 'raises NotImplementedError when called on base class' do
-      query = described_class.allocate
+      query = ApplicationQuery.allocate
 
       expect { query.send(:default_relation) }.to raise_error(NotImplementedError)
     end

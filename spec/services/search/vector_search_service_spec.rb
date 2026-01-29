@@ -28,7 +28,7 @@ RSpec.describe Search::VectorSearchService do
     it 'excludes documents without embeddings' do
       results = service.call('test')
 
-      documents = results.pluck(:document)
+      documents = results.map { |r| r[:document] }
       expect(documents).not_to include(doc_no_embedding)
     end
 

@@ -27,14 +27,14 @@ module API
 
       def build_product_query
         ProductQuery.new
-          .active
-          .with_associations
-          .by_category(params[:category_id] || params[:category])
-          .by_brand(params[:brand_id] || params[:brand])
-          .price_range(params[:min_price], params[:max_price])
-          .in_stock(parse_boolean(params[:in_stock]))
-          .search(params[:q])
-          .sorted_by(sort_field, sort_direction)
+                    .active
+                    .with_associations
+                    .by_category(params[:category_id] || params[:category])
+                    .by_brand(params[:brand_id] || params[:brand])
+                    .price_range(params[:min_price], params[:max_price])
+                    .in_stock(parse_boolean(params[:in_stock]))
+                    .search(params[:q])
+                    .sorted_by(sort_field, sort_direction)
       end
 
       def sort_field
