@@ -1,207 +1,94 @@
 # frozen_string_literal: true
 
-# Seed data for SmartCatalog
-# Run with: docker-compose exec app rails db:seed
+require 'json'
 
-puts 'Seeding database...'
+# Seed data for SmartCatalog from JSON file
+# Run with: docker-compose run --rm app rails db:seed
+# Note: Seeds are skipped in test environment to avoid conflicts with factories
+
+# Skip seeding in test environment
+if Rails.env.test?
+  puts 'Skipping seeds in test environment (use factories instead)'
+  return
+end
+
+puts 'Seeding database from JSON...'
+
+# Load JSON data
+json_path = Rails.root.join('db/catalog_1000.json')
+
+unless File.exist?(json_path)
+  puts "ERROR: JSON file not found at #{json_path}"
+  puts 'Please place catalog_1000.json in the db/ directory'
+  raise "Seeding aborted: missing data file at #{json_path}"
+end
+
+puts "Loading data from #{json_path}..."
+data = JSON.parse(File.read(json_path))
 
 # Create categories
-categories = [
-  { name: 'Electronics', slug: 'electronics', description: 'Electronic devices and gadgets' },
-  { name: 'Computers', slug: 'computers', description: 'Laptops, desktops, and accessories' },
-  { name: 'Phones', slug: 'phones', description: 'Smartphones and accessories' },
-  { name: 'Audio', slug: 'audio', description: 'Headphones, speakers, and audio equipment' },
-  { name: 'Accessories', slug: 'accessories', description: 'Tech accessories and peripherals' }
-].map do |attrs|
-  Category.find_or_create_by!(slug: attrs[:slug]) do |c|
-    c.name = attrs[:name]
-    c.description = attrs[:description]
+puts 'Creating categories...'
+categories_count = 0
+data['categories'].each do |cat|
+  Category.find_or_create_by!(id: cat['id']) do |c|
+    c.name = cat['name']
+    c.slug = cat['slug']
+    categories_count += 1
   end
 end
-
-puts "Created #{categories.count} categories"
+puts "✓ Created #{categories_count} categories (#{Category.count} total)"
 
 # Create brands
-brands = [
-  { name: 'Apple', slug: 'apple' },
-  { name: 'Samsung', slug: 'samsung' },
-  { name: 'Sony', slug: 'sony' },
-  { name: 'Dell', slug: 'dell' },
-  { name: 'HP', slug: 'hp' },
-  { name: 'Lenovo', slug: 'lenovo' },
-  { name: 'Google', slug: 'google' },
-  { name: 'Microsoft', slug: 'microsoft' },
-  { name: 'Bose', slug: 'bose' },
-  { name: 'JBL', slug: 'jbl' }
-].map do |attrs|
-  Brand.find_or_create_by!(slug: attrs[:slug]) do |b|
-    b.name = attrs[:name]
+puts 'Creating brands...'
+brands_count = 0
+data['brands'].each do |brand|
+  Brand.find_or_create_by!(id: brand['id']) do |b|
+    b.name = brand['name']
+    b.slug = brand['name'].parameterize
+    brands_count += 1
   end
 end
+puts "✓ Created #{brands_count} brands (#{Brand.count} total)"
 
-puts "Created #{brands.count} brands"
+# Create products
+puts 'Creating products...'
+products_count = 0
+failed_products = []
 
-# Create sample products
-products_data = [
-  {
-    name: 'MacBook Pro 14"',
-    sku: 'MBP-14-M3',
-    description: 'Apple MacBook Pro with M3 Pro chip, 14-inch Liquid Retina XDR display',
-    price: 1999.00,
-    category: 'computers',
-    brand: 'apple',
-    specifications: {
-      'processor' => 'Apple M3 Pro',
-      'memory' => '18GB',
-      'storage' => '512GB SSD',
-      'display' => '14.2-inch Liquid Retina XDR'
-    }
-  },
-  {
-    name: 'iPhone 15 Pro',
-    sku: 'IP15-PRO-256',
-    description: 'Apple iPhone 15 Pro with A17 Pro chip and titanium design',
-    price: 999.00,
-    category: 'phones',
-    brand: 'apple',
-    specifications: {
-      'processor' => 'A17 Pro',
-      'storage' => '256GB',
-      'display' => '6.1-inch Super Retina XDR',
-      'camera' => '48MP Main + 12MP Ultra Wide + 12MP Telephoto'
-    }
-  },
-  {
-    name: 'Galaxy S24 Ultra',
-    sku: 'GS24-ULTRA-512',
-    description: 'Samsung Galaxy S24 Ultra with S Pen and AI features',
-    price: 1199.00,
-    category: 'phones',
-    brand: 'samsung',
-    specifications: {
-      'processor' => 'Snapdragon 8 Gen 3',
-      'storage' => '512GB',
-      'display' => '6.8-inch QHD+ Dynamic AMOLED',
-      'camera' => '200MP Main + 12MP Ultra Wide + 50MP Telephoto'
-    }
-  },
-  {
-    name: 'Dell XPS 15',
-    sku: 'DELL-XPS15-I7',
-    description: 'Dell XPS 15 with Intel Core i7 and OLED display',
-    price: 1599.00,
-    category: 'computers',
-    brand: 'dell',
-    specifications: {
-      'processor' => 'Intel Core i7-13700H',
-      'memory' => '16GB DDR5',
-      'storage' => '512GB SSD',
-      'display' => '15.6-inch 3.5K OLED'
-    }
-  },
-  {
-    name: 'Sony WH-1000XM5',
-    sku: 'SONY-WH1000XM5',
-    description: 'Sony premium wireless noise-canceling headphones',
-    price: 349.00,
-    category: 'audio',
-    brand: 'sony',
-    specifications: {
-      'driver' => '30mm',
-      'battery' => '30 hours',
-      'noise_canceling' => 'Yes',
-      'connectivity' => 'Bluetooth 5.2'
-    }
-  },
-  {
-    name: 'AirPods Pro 2',
-    sku: 'AIRPODS-PRO2',
-    description: 'Apple AirPods Pro with USB-C and Adaptive Audio',
-    price: 249.00,
-    category: 'audio',
-    brand: 'apple',
-    specifications: {
-      'chip' => 'H2',
-      'battery' => '6 hours (30 with case)',
-      'noise_canceling' => 'Yes',
-      'connectivity' => 'Bluetooth 5.3'
-    }
-  },
-  {
-    name: 'ThinkPad X1 Carbon',
-    sku: 'TP-X1C-G11',
-    description: 'Lenovo ThinkPad X1 Carbon Gen 11 ultrabook',
-    price: 1449.00,
-    category: 'computers',
-    brand: 'lenovo',
-    specifications: {
-      'processor' => 'Intel Core i7-1365U',
-      'memory' => '16GB LPDDR5',
-      'storage' => '512GB SSD',
-      'display' => '14-inch 2.8K OLED'
-    }
-  },
-  {
-    name: 'Pixel 8 Pro',
-    sku: 'PIXEL8-PRO-256',
-    description: 'Google Pixel 8 Pro with Tensor G3 and AI features',
-    price: 999.00,
-    category: 'phones',
-    brand: 'google',
-    specifications: {
-      'processor' => 'Google Tensor G3',
-      'storage' => '256GB',
-      'display' => '6.7-inch LTPO OLED',
-      'camera' => '50MP Main + 48MP Ultra Wide + 48MP Telephoto'
-    }
-  },
-  {
-    name: 'Surface Laptop 5',
-    sku: 'SL5-15-I7',
-    description: 'Microsoft Surface Laptop 5 with touchscreen',
-    price: 1299.00,
-    category: 'computers',
-    brand: 'microsoft',
-    specifications: {
-      'processor' => 'Intel Core i7-1255U',
-      'memory' => '16GB LPDDR5x',
-      'storage' => '512GB SSD',
-      'display' => '15-inch PixelSense Touch'
-    }
-  },
-  {
-    name: 'Bose QuietComfort Ultra',
-    sku: 'BOSE-QC-ULTRA',
-    description: 'Bose QuietComfort Ultra wireless headphones with spatial audio',
-    price: 429.00,
-    category: 'audio',
-    brand: 'bose',
-    specifications: {
-      'battery' => '24 hours',
-      'noise_canceling' => 'Yes',
-      'spatial_audio' => 'Yes',
-      'connectivity' => 'Bluetooth 5.3'
-    }
-  }
-]
-
-categories_map = Category.all.index_by(&:slug)
-brands_map = Brand.all.index_by(&:slug)
-
-products_data.each do |data|
-  Product.find_or_create_by!(sku: data[:sku]) do |p|
-    p.name = data[:name]
-    p.description = data[:description]
-    p.price = data[:price]
-    p.currency = 'USD'
-    p.category = categories_map[data[:category]]
-    p.brand = brands_map[data[:brand]]
-    p.specifications = data[:specifications]
+data['products'].each_with_index do |product, index|
+  Product.find_or_create_by!(sku: product['sku']) do |p|
+    p.id = product['id']
+    p.name = product['name']
+    p.description = product['description']
+    p.price = product['price']
+    # Normalize currency: "USD$" -> "USD", "EUR€" -> "EUR", etc.
+    p.currency = product['currency'].gsub(/[^A-Z]/, '')
+    p.category_id = product['category_id']
+    p.brand_id = product['brand_id']
+    p.specifications = product['specifications']
+    p.status = 'active'
     p.in_stock = true
-    p.stock_quantity = rand(10..100)
+    p.stock_quantity = rand(5..50)
+    products_count += 1
   end
+
+  # Progress indicator every 100 products
+  puts "  Processed #{index + 1}/#{data['products'].count} products..." if ((index + 1) % 100).zero?
+rescue StandardError => e
+  failed_products << { sku: product['sku'], error: e.message }
 end
 
-puts "Created #{Product.count} products"
+puts "✓ Created #{products_count} products (#{Product.count} total)"
 
-puts 'Seeding complete!'
+if failed_products.any?
+  puts "\n⚠ Failed to create #{failed_products.count} products:"
+  failed_products.first(5).each do |failure|
+    puts "  - #{failure[:sku]}: #{failure[:error]}"
+  end
+  puts "  ... and #{failed_products.count - 5} more" if failed_products.count > 5
+end
+
+puts "\n✅ Seeding complete!"
+puts "  Categories: #{Category.count}"
+puts "  Brands: #{Brand.count}"
+puts "  Products: #{Product.count}"
