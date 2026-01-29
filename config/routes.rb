@@ -1,10 +1,15 @@
 # frozen_string_literal: true
 
 Rails.application.routes.draw do
-  # Chat UI (main interface)
-  root 'chat#index'
-  get 'chat', to: 'chat#index'
-  get 'chat/stream', to: 'chat#stream'
+  # Authentication (Devise)
+  devise_for :users, skip: [:registrations]
+
+  # Landing page (public)
+  root 'home#index'
+
+  # Chat UI (protected)
+  get 'chat', to: 'chat#index', as: :chat
+  get 'chat/stream', to: 'chat#stream', as: :chat_stream
   get 'chat/:id', to: 'chat#show', as: :chat_conversation
 
   # Health check

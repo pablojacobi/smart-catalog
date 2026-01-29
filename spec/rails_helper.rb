@@ -18,6 +18,9 @@ rescue ActiveRecord::PendingMigrationError => e
   abort e.to_s.strip
 end
 
+# Ensure routes are loaded for Devise
+Rails.application.reload_routes!
+
 RSpec.configure do |config|
   config.fixture_paths = [Rails.root.join('spec/fixtures')]
   config.use_transactional_fixtures = true
@@ -26,6 +29,7 @@ RSpec.configure do |config|
 
   config.include FactoryBot::Syntax::Methods
   config.include ActiveSupport::Testing::TimeHelpers
+  config.include Devise::Test::IntegrationHelpers, type: :request
 
   # Set default host for request specs
   config.before(:each, type: :request) do
