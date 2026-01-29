@@ -1,0 +1,63 @@
+# Ignore bundler config
+/.bundle
+
+# Ignore all logfiles and tempfiles
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+
+# Ignore pidfiles
+/tmp/pids/*
+!/tmp/pids/
+!/tmp/pids/.keep
+
+# Ignore storage
+/storage/*
+!/storage/.keep
+
+# Ignore uploaded files in development
+/public/uploads
+
+# Ignore master key for decrypting credentials and more
+/config/master.key
+/config/credentials/*.key
+
+# Ignore environment files
+.env
+.env.local
+.env.*.local
+
+# Ignore byebug history
+.byebug_history
+
+# Ignore coverage reports
+/coverage/
+
+# Ignore node modules
+/node_modules/
+
+# Ignore vendor bundle
+/vendor/bundle
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/*.tfvars
+!terraform/*.tfvars.example
+terraform/.terraform.lock.hcl
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+spec/examples.txt
