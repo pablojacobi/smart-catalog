@@ -37,10 +37,15 @@ module Chat
       DO NOT use asterisks (*) for the product name - use **bold** markdown.
       Keep each product clearly separated with a blank line.
 
+      ## Follow-up Questions
+      When the context says "Products from previous response", the user is asking about
+      THOSE SPECIFIC products only. Answer based on that list, don't search for new products.
+      Example: "which has the best GPU?" → compare GPUs of the products shown, not all products.
+
       ## Other Guidelines
       - For comparisons: Create a markdown table
       - For counts/statistics: Use the provided statistics
-      - For "best GPU/graphics": Show laptops with RTX 4070 > 4060 > 4050 > Integrated
+      - GPU ranking: RTX 4070 > RTX 4060 > RTX 4050 > Apple M3 GPU > Integrated
       - Always mention if a product is out of stock
     PROMPT
 
@@ -63,13 +68,18 @@ module Chat
       conversation.add_message(role: 'user', content: message)
 
       # Classify the query to extract filters
-      classification = @classifier.call(message, context: build_conversation_context(conversation))
+      conv_context = build_conversation_context(conversation)
+      classification = @classifier.call(message, context: conv_context)
 
-      # Build context with statistics and relevant products
-      context = @context_builder.call(
-        query: classification[:search_query] || message,
-        filters: classification[:filters] || {}
-      )
+      # For contextual queries, use previous products instead of searching new ones
+      context = if classification[:query_type] == 'contextual' && conv_context[:previous_products].any?
+                  build_contextual_response(conv_context[:previous_products], message)
+                else
+                  @context_builder.call(
+                    query: classification[:search_query] || message,
+                    filters: classification[:filters] || {}
+                  )
+                end
 
       # Build messages for LLM
       messages = build_messages(message, context[:markdown], conversation)
@@ -115,10 +125,39 @@ module Chat
     def build_conversation_context(conversation)
       previous_products = []
       if conversation.previous_product_ids.any?
-        previous_products = Product.where(id: conversation.previous_product_ids).to_a
+        previous_products = Product.where(id: conversation.previous_product_ids)
+                                   .includes(:brand, :category).to_a
       end
 
       { previous_products: previous_products }
+    end
+
+    def build_contextual_response(previous_products, _message)
+      # Format previous products as context for follow-up questions
+      markdown = +"## Products from previous response (#{previous_products.size})\n"
+      markdown << "The user is asking about THESE SPECIFIC products:\n\n"
+
+      previous_products.each_with_index do |product, index|
+        stock_indicator = product.in_stock ? '✓ In Stock' : '✗ Out of Stock'
+        price_str = product.price ? "$#{product.price}" : 'N/A'
+
+        markdown << "#{index + 1}. **#{product.name}** | #{product.brand&.name || 'N/A'}\n"
+        markdown << "   - Category: #{product.category&.name || 'N/A'}\n"
+        markdown << "   - Price: #{price_str}\n"
+        markdown << "   - Stock: #{stock_indicator}\n"
+
+        if product.specifications.present?
+          specs = product.specifications.map { |k, v| "#{k}: #{v}" }.join(', ')
+          markdown << "   - Specs: #{specs}\n"
+        end
+        markdown << "\n"
+      end
+
+      {
+        statistics: { total: previous_products.size },
+        products: previous_products,
+        markdown: markdown
+      }
     end
 
     def build_messages(user_message, context_markdown, conversation)
