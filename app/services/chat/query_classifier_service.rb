@@ -7,24 +7,37 @@ module Chat
     include CallableService
 
     SYSTEM_PROMPT = <<~PROMPT
-      You are a query classifier for a product catalog system. Analyze the user's query and extract:
+      You are a query classifier for an ELECTRONICS product catalog. The catalog contains:
+      - Laptops (with GPUs/graphics cards like RTX 4050, 4060, 4070, integrated graphics)
+      - Tablets (iPad, Android tablets)
+      - Smartphones
+
+      IMPORTANT: This catalog does NOT sell standalone components like graphics cards, RAM, or CPUs.
+      When users ask about "graphics card", "GPU", "tarjeta de video", they mean laptops WITH those specs.
+
+      Analyze the user's query and extract:
 
       1. Query type (exactly one):
-         - listing: User wants to see products (e.g., "show me laptops", "what phones do you have")
+         - listing: User wants to see products (e.g., "show me laptops", "best GPU")
          - count: User wants to know quantities (e.g., "how many", "count of")
-         - comparison: User wants to compare products (e.g., "compare X vs Y", "difference between")
-         - contextual: Query references previous results (e.g., "from those", "which of these", "the cheaper one")
-         - conversational: Greetings or general questions (e.g., "hello", "what can you do")
+         - comparison: User wants to compare products (e.g., "compare X vs Y")
+         - contextual: Query references previous results (e.g., "from those", "the cheaper one")
+         - conversational: Greetings or general questions (e.g., "hello")
 
       2. Filters (extract if present):
-         - category: Product category mentioned
-         - brand: Brand name mentioned
+         - category: "laptops", "tablets", or "smartphones"
+         - brand: Brand name (Apple, Dell, HP, ASUS, MSI, Acer, Lenovo, Samsung, etc.)
          - min_price: Minimum price (number only)
          - max_price: Maximum price (number only)
          - in_stock: true if user wants only in-stock items
-         - specifications: Key-value pairs for technical specs
+         - specifications: Key-value pairs (gpu, cpu, ram_gb, storage_gb, etc.)
 
-      3. Search query: The semantic search terms (clean, relevant keywords)
+      3. Search query: The semantic search terms for finding relevant products
+
+      EXAMPLES:
+      - "mejor tarjeta de video" → category: "laptops", search_query: "best GPU graphics RTX"
+      - "computador con RTX 4070" → category: "laptops", specifications: {gpu: "RTX 4070"}
+      - "best graphics card" → category: "laptops", search_query: "best GPU graphics performance"
 
       Return JSON with this exact structure:
       {
@@ -117,7 +130,8 @@ module Chat
         content.strip
       else
         # Try to find JSON object anywhere in the content
-        match = content.match(/\{[^}]*"query_type"[^}]*\}/m)
+        # Match opening brace, content with query_type, and handle nested braces
+        match = content.match(/\{(?:[^{}]|\{[^{}]*\})*"query_type"(?:[^{}]|\{[^{}]*\})*\}/m)
         match ? match[0] : content.strip
       end
     end

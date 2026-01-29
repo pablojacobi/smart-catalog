@@ -40,7 +40,7 @@
           </div>
           <span class="text-sm text-gray-300 truncate max-w-[120px]"><%= current_user.email %></span>
         </div>
-        <%= link_to destroy_user_session_path, method: :delete, class: "p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors", title: "Sign out" do %>
+        <%= link_to destroy_user_session_path, data: { turbo_method: :delete }, class: "p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors", title: "Sign out" do %>
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
           </svg>

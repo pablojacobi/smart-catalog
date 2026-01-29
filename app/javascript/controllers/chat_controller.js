@@ -125,13 +125,19 @@ export default class extends Controller {
 
       eventSource.addEventListener("done", (event) => {
         const data = JSON.parse(event.data)
+        const isNewConversation = this.conversationIdValue !== data.conversation_id
         this.conversationIdValue = data.conversation_id
-        
+
         // Update conversation title if provided
         if (data.conversation_title && this.hasConversationTitleTarget) {
           this.conversationTitleTarget.textContent = data.conversation_title
         }
-        
+
+        // Update sidebar with new/updated conversation
+        if (data.conversation_title && this.hasConversationListTarget) {
+          this.updateConversationList(data.conversation_id, data.conversation_title, isNewConversation)
+        }
+
         eventSource.close()
         this.stopStreaming()
       })
@@ -158,23 +164,94 @@ export default class extends Controller {
   }
 
   renderMarkdown(text) {
-    // Simple markdown rendering
-    return text
-      // Headers
-      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-4 mb-2">$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-4 mb-2">$1</h1>')
-      // Bold
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      // Italic
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      // Code
-      .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm">$1</code>')
-      // Lists
-      .replace(/^\- (.*$)/gim, '<li class="ml-4">$1</li>')
-      .replace(/(<li.*<\/li>)\n/g, '<ul class="list-disc my-2">$1</ul>')
-      // Line breaks
-      .replace(/\n/g, '<br>')
+    // Enhanced markdown rendering for product listings
+    let html = text
+
+    // Tables - must be processed first before line breaks
+    html = this.renderTables(html)
+
+    // Headers
+    html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-3 mb-1">$1</h3>')
+    html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-3 mb-1">$1</h2>')
+    html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-3 mb-1">$1</h1>')
+
+    // Bold (product names)
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-gray-900">$1</strong>')
+
+    // Italic (but not inside bold)
+    html = html.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>')
+
+    // Code
+    html = html.replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm">$1</code>')
+
+    // Lists - compact styling
+    html = html.replace(/^- (.*$)/gim, '<li class="ml-4 text-gray-600 leading-tight">$1</li>')
+
+    // Group consecutive list items
+    html = html.replace(/(<li[^>]*>.*?<\/li>\n?)+/g, '<ul class="list-disc ml-4 space-y-0.5 my-1">$&</ul>')
+
+    // Paragraphs and line breaks
+    html = html.replace(/\n\n/g, '</p><p class="mt-2">')
+    html = html.replace(/\n/g, '<br>')
+
+    return html
+  }
+
+  renderTables(text) {
+    const lines = text.split('\n')
+    let inTable = false
+    let tableHtml = ''
+    let result = []
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim()
+
+      // Check if this is a table row (starts and ends with |)
+      if (line.startsWith('|') && line.endsWith('|')) {
+        if (!inTable) {
+          inTable = true
+          tableHtml = '<div class="overflow-x-auto my-3"><table class="min-w-full text-sm border-collapse">'
+        }
+
+        // Check if this is a separator row (contains only |, -, and spaces)
+        if (/^\|[\s\-:|]+\|$/.test(line)) {
+          // Skip separator row, but mark that headers are done
+          continue
+        }
+
+        const cells = line.split('|').filter(c => c.trim() !== '')
+        const isHeader = !tableHtml.includes('<tbody>')
+
+        if (isHeader && !tableHtml.includes('<thead>')) {
+          tableHtml += '<thead class="bg-gray-100"><tr>'
+          cells.forEach(cell => {
+            tableHtml += `<th class="px-3 py-2 text-left font-semibold border-b border-gray-200">${cell.trim()}</th>`
+          })
+          tableHtml += '</tr></thead><tbody>'
+        } else {
+          tableHtml += '<tr class="border-b border-gray-100">'
+          cells.forEach(cell => {
+            tableHtml += `<td class="px-3 py-1.5">${cell.trim()}</td>`
+          })
+          tableHtml += '</tr>'
+        }
+      } else {
+        if (inTable) {
+          tableHtml += '</tbody></table></div>'
+          result.push(tableHtml)
+          tableHtml = ''
+          inTable = false
+        }
+        result.push(line)
+      }
+    }
+
+    if (inTable) {
+      tableHtml += '</tbody></table></div>'
+      result.push(tableHtml)
+    }
+
+    return result.join('\n')
   }
 
   scrollToBottom() {
@@ -185,5 +262,48 @@ export default class extends Controller {
     const div = document.createElement("div")
     div.textContent = text
     return div.innerHTML
+  }
+
+  updateConversationList(conversationId, title, isNew) {
+    const existingItem = this.conversationListTarget.querySelector(`[data-conversation-id="${conversationId}"]`)
+
+    if (existingItem) {
+      // Update existing conversation title
+      const titleSpan = existingItem.querySelector("span.truncate")
+      if (titleSpan) {
+        titleSpan.textContent = title
+      }
+      // Move to top of list
+      this.conversationListTarget.querySelector(".space-y-1")?.prepend(existingItem)
+    } else if (isNew) {
+      // Add new conversation to top of list
+      const newItem = this.createConversationItem(conversationId, title)
+      const list = this.conversationListTarget.querySelector(".space-y-1")
+      if (list) {
+        list.prepend(newItem)
+      } else {
+        // No conversations yet, create the list
+        const emptyMsg = this.conversationListTarget.querySelector("p")
+        if (emptyMsg) emptyMsg.remove()
+        const newList = document.createElement("div")
+        newList.className = "space-y-1"
+        newList.appendChild(newItem)
+        this.conversationListTarget.appendChild(newList)
+      }
+    }
+  }
+
+  createConversationItem(conversationId, title) {
+    const link = document.createElement("a")
+    link.href = `/chat/${conversationId}`
+    link.className = "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors bg-gray-700"
+    link.setAttribute("data-conversation-id", conversationId)
+    link.innerHTML = `
+      <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+      </svg>
+      <span class="truncate text-sm text-gray-300">${this.escapeHtml(title)}</span>
+    `
+    return link
   }
 }
