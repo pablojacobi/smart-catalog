@@ -13,8 +13,7 @@ Rails.application.configure do
   config.action_dispatch.show_exceptions = :rescuable
 
   # Disable host authorization completely for tests
-  config.hosts << 'example.org'
-  config.hosts << 'www.example.com'
+  config.hosts.clear
 
   # Logging
   config.log_level = :warn
