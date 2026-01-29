@@ -1,6 +1,12 @@
 # frozen_string_literal: true
 
 Rails.application.routes.draw do
+  # Chat UI (main interface)
+  root 'chat#index'
+  get 'chat', to: 'chat#index'
+  get 'chat/stream', to: 'chat#stream'
+  get 'chat/:id', to: 'chat#show', as: :chat_conversation
+
   # Health check
   get 'health', to: 'health#show'
 

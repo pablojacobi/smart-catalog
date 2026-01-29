@@ -31,6 +31,26 @@ module Gemini
       parse_generate_response(response)
     end
 
+    # Stream content generation (yields chunks as they arrive)
+    # @param messages [Array<Hash>] Array of message hashes with :role and :content
+    # @param model [String] Model to use (defaults to config)
+    # @param temperature [Float] Temperature for generation
+    # @param max_tokens [Integer] Maximum tokens to generate
+    # @yield [String] Yields each text chunk as it arrives
+    def stream_content(messages, model: nil, temperature: 0.7, max_tokens: 2048, &block)
+      model ||= @config[:model]
+
+      body = {
+        contents: format_messages(messages),
+        generationConfig: {
+          temperature: temperature,
+          maxOutputTokens: max_tokens
+        }
+      }
+
+      stream_post("/models/#{model}:streamGenerateContent", body, &block)
+    end
+
     # Generate embeddings
     def embed(text, model: nil)
       model ||= @config[:embedding_model]
@@ -55,6 +75,51 @@ module Gemini
         f.options.timeout = @config[:timeout]
         f.options.open_timeout = 10
         f.adapter Faraday.default_adapter
+      end
+    end
+
+    def streaming_connection
+      @streaming_connection ||= Faraday.new(url: @base_url) do |f|
+        f.request :json
+        f.options.timeout = 120 # Longer timeout for streaming
+        f.options.open_timeout = 10
+        f.adapter Faraday.default_adapter
+      end
+    end
+
+    def stream_post(endpoint, body, &)
+      url = "#{@base_url}#{endpoint}?key=#{@api_key}&alt=sse"
+      buffer = +''
+
+      streaming_connection.post(url) do |req|
+        req.body = body.to_json
+        req.headers['Content-Type'] = 'application/json'
+        req.options.on_data = proc do |chunk, _size, _env|
+          buffer << chunk
+          process_sse_buffer(buffer, &)
+        end
+      end
+    rescue Faraday::TimeoutError, Faraday::ConnectionFailed => e
+      raise SmartCatalog::ServiceUnavailableError, "Gemini streaming unavailable: #{e.message}"
+    end
+
+    def process_sse_buffer(buffer, &block)
+      while (line_end = buffer.index("\n"))
+        line = buffer.slice!(0, line_end + 1).strip
+        next if line.empty?
+
+        next unless line.start_with?('data: ')
+
+        json_str = line[6..]
+        next if json_str == '[DONE]'
+
+        begin
+          data = JSON.parse(json_str)
+          text = data.dig('candidates', 0, 'content', 'parts', 0, 'text')
+          yield text if text && block
+        rescue JSON::ParserError
+          # Ignore malformed JSON chunks
+        end
       end
     end
 

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module API
+module Api
   module V1
     # Documents controller (read-only in this demo version)
     # Full version includes: upload, OCR processing, reprocessing

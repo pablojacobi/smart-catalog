@@ -1,0 +1,80 @@
+<div class="flex flex-col h-screen bg-gray-50" data-controller="chat" data-chat-conversation-id-value="<%= @conversation.id %>">
+  <!-- Header -->
+  <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-xl font-semibold text-gray-900">SmartCatalog</h1>
+        <p class="text-sm text-gray-500">AI Product Assistant</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 text-sm text-gray-500">
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 text-green-700">
+        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+        Online
+      </span>
+    </div>
+  </header>
+
+  <!-- Chat Messages -->
+  <main class="flex-1 overflow-y-auto px-4 py-6" data-chat-target="messages">
+    <div class="max-w-3xl mx-auto space-y-6">
+      <!-- Welcome Message -->
+      <div class="flex gap-4" data-chat-target="welcome">
+        <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <div class="bg-white rounded-2xl rounded-tl-none px-4 py-3 shadow-sm border border-gray-100">
+            <p class="text-gray-700">
+              Hello! I'm your AI product assistant. I can help you find electronics, compare products, and answer questions about our catalog.
+            </p>
+            <p class="text-gray-700 mt-2">Try asking me:</p>
+            <ul class="mt-2 space-y-1 text-gray-600 text-sm">
+              <li class="cursor-pointer hover:text-blue-600" data-action="click->chat#quickQuestion">"Show me laptops under $1500"</li>
+              <li class="cursor-pointer hover:text-blue-600" data-action="click->chat#quickQuestion">"Compare the best Apple products"</li>
+              <li class="cursor-pointer hover:text-blue-600" data-action="click->chat#quickQuestion">"What tablets do you have in stock?"</li>
+              <li class="cursor-pointer hover:text-blue-600" data-action="click->chat#quickQuestion">"How many products are from Dell?"</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Input Area -->
+  <footer class="bg-white border-t border-gray-200 px-4 py-4">
+    <div class="max-w-3xl mx-auto">
+      <form data-action="submit->chat#send" class="flex gap-3">
+        <div class="flex-1 relative">
+          <input 
+            type="text" 
+            data-chat-target="input"
+            placeholder="Ask about products, prices, specifications..." 
+            class="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            autocomplete="off"
+          >
+        </div>
+        <button 
+          type="submit" 
+          data-chat-target="sendButton"
+          class="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium rounded-xl hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          <span>Send</span>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+          </svg>
+        </button>
+      </form>
+      <p class="text-xs text-gray-400 mt-2 text-center">
+        Powered by Google Gemini • 1,000+ products in catalog
+      </p>
+    </div>
+  </footer>
+</div>

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module API
+module Api
   module V1
     class ChatController < BaseController
       # POST /api/v1/chat/completions

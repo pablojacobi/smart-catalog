@@ -1,11 +1,20 @@
 # frozen_string_literal: true
 
-module API
+module Api
   module V1
-    class BaseController < ApplicationController
-      # Inherits ErrorHandler and Pagination from ApplicationController
+    # Base controller for API endpoints
+    # Inherits from ActionController::API for lightweight JSON responses
+    class BaseController < ActionController::API
+      include ErrorHandler
+      include Pagination
+
+      before_action :set_default_format
 
       private
+
+      def set_default_format
+        request.format = :json
+      end
 
       # Render a collection with blueprint serialization
       def render_collection(collection, blueprint:, view: :default, meta: nil)

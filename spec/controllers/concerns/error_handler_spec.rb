@@ -3,7 +3,10 @@
 require 'rails_helper'
 
 RSpec.describe ErrorHandler, type: :controller do
-  controller(ApplicationController) do
+  # Create a test controller that includes the ErrorHandler concern
+  controller(ActionController::API) do
+    include ErrorHandler
+
     def record_not_found
       raise ActiveRecord::RecordNotFound, 'Product not found'
     end
