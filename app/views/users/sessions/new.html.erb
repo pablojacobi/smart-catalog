@@ -37,15 +37,11 @@
         </div>
 
         <!-- Remember Me -->
-        <div class="flex items-center justify-between">
+        <div class="flex items-center">
           <label class="flex items-center">
             <%= f.check_box :remember_me, class: "w-4 h-4 rounded border-white/20 bg-white/10 text-pink-500 focus:ring-pink-500 focus:ring-offset-0" %>
             <span class="ml-2 text-sm text-gray-300">Remember me</span>
           </label>
-
-          <% if devise_mapping.recoverable? && controller_name != 'passwords' && controller_name != 'registrations' %>
-            <%= link_to "Forgot password?", new_password_path(resource_name), class: "text-sm text-pink-400 hover:text-pink-300 transition-colors" %>
-          <% end %>
         </div>
 
         <!-- Submit Button -->
