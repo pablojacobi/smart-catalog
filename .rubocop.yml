@@ -1,0 +1,153 @@
+require:
+  - rubocop-rails
+  - rubocop-rspec
+
+AllCops:
+  TargetRubyVersion: 3.4
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - 'bin/**/*'
+    - 'db/schema.rb'
+    - 'db/migrate/**/*'
+    - 'vendor/**/*'
+    - 'tmp/**/*'
+    - 'log/**/*'
+    - 'storage/**/*'
+
+# Layout
+Layout/LineLength:
+  Max: 130
+  Exclude:
+    - 'spec/**/*'
+    - 'app/services/concerns/service_result.rb'
+    - 'app/services/chat/**/*'
+
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: indented
+
+# Metrics
+Metrics/BlockLength:
+  Exclude:
+    - 'spec/**/*'
+    - 'config/routes.rb'
+    - 'config/environments/**/*'
+
+Metrics/MethodLength:
+  Max: 30
+  Exclude:
+    - 'spec/**/*'
+    - 'db/seeds.rb'
+
+Metrics/ClassLength:
+  Max: 200
+  Exclude:
+    - 'spec/**/*'
+
+Metrics/AbcSize:
+  Max: 45
+  Exclude:
+    - 'spec/**/*'
+
+Metrics/CyclomaticComplexity:
+  Max: 25
+
+Metrics/PerceivedComplexity:
+  Max: 25
+
+Style/ComparableClamp:
+  Enabled: false
+
+Style/OptionalBooleanParameter:
+  Enabled: false
+
+Metrics/ParameterLists:
+  Max: 6
+
+# Style
+Style/Documentation:
+  Enabled: false
+
+Style/FrozenStringLiteralComment:
+  Enabled: true
+
+Style/StringLiterals:
+  EnforcedStyle: single_quotes
+
+Style/StringLiteralsInInterpolation:
+  EnforcedStyle: single_quotes
+
+Style/HashSyntax:
+  EnforcedShorthandSyntax: either
+
+# Rails
+Rails/I18nLocaleTexts:
+  Enabled: false
+
+Rails/SkipsModelValidations:
+  Exclude:
+    - 'spec/**/*'
+
+# RSpec
+RSpec/ExampleLength:
+  Max: 20
+
+RSpec/MultipleExpectations:
+  Max: 10
+
+RSpec/NestedGroups:
+  Max: 4
+
+RSpec/MultipleMemoizedHelpers:
+  Max: 15
+
+RSpec/ContextWording:
+  Prefixes:
+    - when
+    - with
+    - without
+    - if
+    - for
+
+RSpec/DescribeClass:
+  Exclude:
+    - 'spec/requests/**/*'
+
+RSpec/MultipleDescribes:
+  Enabled: false
+
+RSpec/IndexedLet:
+  Enabled: false
+
+RSpec/LetSetup:
+  Enabled: false
+
+RSpec/VerifiedDoubles:
+  Enabled: false
+
+# Disable for bin scripts
+Rails/Exit:
+  Exclude:
+    - 'bin/**/*'
+    - 'spec/rails_helper.rb'
+
+# Allow short parameter names in specs
+Naming/MethodParameterName:
+  Exclude:
+    - 'spec/**/*'
+
+# Allow flexible context descriptions
+RSpec/ContextWording:
+  Prefixes:
+    - when
+    - with
+    - without
+    - if
+    - for
+    - fallback
+    - in
+
+# Ignore unreachable loop in test setup
+Lint/UnreachableLoop:
+  Exclude:
+    - 'spec/**/*'
