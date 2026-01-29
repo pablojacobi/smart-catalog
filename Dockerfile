@@ -30,6 +30,11 @@ COPY . .
 # Create required directories
 RUN mkdir -p tmp/pids tmp/cache tmp/sockets log
 
+# Precompile assets for production
+ENV RAILS_ENV=production
+ENV SECRET_KEY_BASE=dummy_key_for_precompilation
+RUN bundle exec rails assets:precompile
+
 # Expose port
 EXPOSE 3000
 

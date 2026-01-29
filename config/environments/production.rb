@@ -7,6 +7,9 @@ Rails.application.configure do
   config.eager_load = true
   config.consider_all_requests_local = false
 
+  # Serve static files from /public (needed for Railway/containers without Nginx)
+  config.public_file_server.enabled = ENV['RAILS_SERVE_STATIC_FILES'].present? || true
+
   # Caching
   config.action_controller.perform_caching = true
 
@@ -15,7 +18,7 @@ Rails.application.configure do
   config.log_tags = [:request_id]
 
   # Use default logging formatter
-  config.log_formatter = Logger::Formatter.new
+  config.log_formatter = ::Logger::Formatter.new
 
   # Log to STDOUT
   if ENV['RAILS_LOG_TO_STDOUT'].present?
