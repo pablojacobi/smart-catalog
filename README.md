@@ -224,7 +224,7 @@ GitHub Actions runs on every push/PR:
 |----------|-------------|----------|
 | `DATABASE_URL` | PostgreSQL connection string | Yes |
 | `GEMINI_API_KEY` | Google AI Studio API key | Yes |
-| `GEMINI_MODEL` | Chat model (default: gemini-1.5-flash) | No |
+| `GEMINI_MODEL` | Chat model (default: gemini-2.0-flash) | No |
 | `GEMINI_EMBEDDING_MODEL` | Embedding model (default: text-embedding-004) | No |
 
 ---

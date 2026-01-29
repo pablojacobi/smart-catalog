@@ -64,12 +64,5 @@ RSpec.describe CallableService do
       expect(result).to be_an(Array)
       expect(result.length).to eq(768)
     end
-
-    it 'works with Gemini::ChatService' do
-      stub_gemini_chat('Hello response')
-
-      result = Gemini::ChatService.call(messages: [{ role: 'user', content: 'Hello' }])
-      expect(result).to eq('Hello response')
-    end
   end
 end

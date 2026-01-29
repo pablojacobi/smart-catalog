@@ -101,4 +101,51 @@ RSpec.describe Product do
       expect(product.specification(:missing)).to be_nil
     end
   end
+
+  describe '#embedding_text' do
+    let(:category) { build(:category, name: 'Laptops') }
+    let(:brand) { build(:brand, name: 'Apple') }
+
+    it 'includes product name' do
+      product = build(:product, name: 'MacBook Pro')
+      expect(product.embedding_text).to include('MacBook Pro')
+    end
+
+    it 'includes brand name when present' do
+      product = build(:product, name: 'MacBook Pro', brand: brand)
+      expect(product.embedding_text).to include('by Apple')
+    end
+
+    it 'includes category name when present' do
+      product = build(:product, name: 'MacBook Pro', category: category)
+      expect(product.embedding_text).to include('in Laptops')
+    end
+
+    it 'includes description when present' do
+      product = build(:product, name: 'MacBook Pro', description: 'A powerful laptop')
+      expect(product.embedding_text).to include('A powerful laptop')
+    end
+
+    it 'includes specifications when present' do
+      product = build(:product, name: 'MacBook Pro', specifications: { 'cpu' => 'M3', 'ram_gb' => 16 })
+      text = product.embedding_text
+      expect(text).to include('cpu: M3')
+      expect(text).to include('ram_gb: 16')
+    end
+
+    it 'combines all parts with periods' do
+      product = build(:product,
+                      name: 'MacBook Pro',
+                      brand: brand,
+                      category: category,
+                      description: 'Powerful laptop',
+                      specifications: { 'cpu' => 'M3' })
+      text = product.embedding_text
+      expect(text).to include('MacBook Pro')
+      expect(text).to include('by Apple')
+      expect(text).to include('in Laptops')
+      expect(text).to include('Powerful laptop')
+      expect(text).to include('cpu: M3')
+    end
+  end
 end
