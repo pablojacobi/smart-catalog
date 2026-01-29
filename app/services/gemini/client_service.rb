@@ -73,7 +73,7 @@ module Gemini
           sleep(2**retries)
           retry
         end
-        raise SmartCatalog::ServiceUnavailableError.new("Gemini API unavailable: #{e.message}")
+        raise SmartCatalog::ServiceUnavailableError, "Gemini API unavailable: #{e.message}"
       end
     end
 
@@ -82,15 +82,15 @@ module Gemini
       when 200..299
         response.body
       when 400
-        raise SmartCatalog::ValidationError.new("Bad request: #{extract_error(response)}")
+        raise SmartCatalog::ValidationError, "Bad request: #{extract_error(response)}"
       when 401, 403
-        raise SmartCatalog::AuthenticationError.new("Authentication failed: #{extract_error(response)}")
+        raise SmartCatalog::AuthenticationError, "Authentication failed: #{extract_error(response)}"
       when 429
-        raise SmartCatalog::RateLimitError.new("Rate limit exceeded: #{extract_error(response)}")
+        raise SmartCatalog::RateLimitError, "Rate limit exceeded: #{extract_error(response)}"
       when 500..599
-        raise SmartCatalog::ServiceUnavailableError.new("Gemini service error: #{extract_error(response)}")
+        raise SmartCatalog::ServiceUnavailableError, "Gemini service error: #{extract_error(response)}"
       else
-        raise SmartCatalog::Error.new("Unexpected response: #{response.status}")
+        raise SmartCatalog::Error, "Unexpected response: #{response.status}"
       end
     end
 

@@ -8,11 +8,11 @@ RSpec.describe Gemini::ChatService do
 
     before do
       allow(Rails.application.config).to receive(:gemini).and_return({
-        api_key: 'test-api-key',
-        model: 'gemini-1.5-flash',
-        base_url: 'https://generativelanguage.googleapis.com/v1beta',
-        timeout: 60
-      })
+                                                                       api_key: 'test-api-key',
+                                                                       model: 'gemini-1.5-flash',
+                                                                       base_url: 'https://generativelanguage.googleapis.com/v1beta',
+                                                                       timeout: 60
+                                                                     })
 
       stub_request(:post, /generativelanguage.googleapis.com.*generateContent/)
         .to_return(

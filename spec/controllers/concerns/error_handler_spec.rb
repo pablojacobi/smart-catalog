@@ -15,7 +15,7 @@ RSpec.describe ErrorHandler, type: :controller do
     end
 
     def smart_catalog_not_found
-      raise SmartCatalog::NotFoundError.new('Custom not found')
+      raise SmartCatalog::NotFoundError, 'Custom not found'
     end
 
     def smart_catalog_validation
@@ -31,15 +31,15 @@ RSpec.describe ErrorHandler, type: :controller do
     end
 
     def authentication_error
-      raise SmartCatalog::AuthenticationError.new('Invalid API key')
+      raise SmartCatalog::AuthenticationError, 'Invalid API key'
     end
 
     def rate_limit_error
-      raise SmartCatalog::RateLimitError.new('Too many requests')
+      raise SmartCatalog::RateLimitError, 'Too many requests'
     end
 
     def service_unavailable_error
-      raise SmartCatalog::ServiceUnavailableError.new('Service down')
+      raise SmartCatalog::ServiceUnavailableError, 'Service down'
     end
 
     def success_response

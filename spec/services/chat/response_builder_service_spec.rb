@@ -156,7 +156,7 @@ RSpec.describe Chat::ResponseBuilderService do
         expect(mock_client).to have_received(:generate_content) do |messages, **_opts|
           # Should only include 5 products in the message
           product_content = messages.last[:content]
-          expect(product_content.scan(/Name:/).count).to eq(5)
+          expect(product_content.scan('Name:').count).to eq(5)
         end
       end
     end

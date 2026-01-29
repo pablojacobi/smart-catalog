@@ -44,7 +44,7 @@ RSpec.describe ConversationBlueprint do
 
     it 'orders messages' do
       # Messages should be in chronological order
-      roles = result[:messages].map { |m| m[:role] }
+      roles = result[:messages].pluck(:role)
       expect(roles).to eq(%w[user assistant])
     end
   end

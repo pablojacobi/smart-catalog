@@ -52,8 +52,8 @@ class ProductQuery < ApplicationQuery
   # Filter by price range
   def price_range(min_price, max_price)
     scope = relation
-    scope = scope.where('price >= ?', min_price) if min_price.present?
-    scope = scope.where('price <= ?', max_price) if max_price.present?
+    scope = scope.where(price: min_price..) if min_price.present?
+    scope = scope.where(price: ..max_price) if max_price.present?
     chain(scope)
   end
 

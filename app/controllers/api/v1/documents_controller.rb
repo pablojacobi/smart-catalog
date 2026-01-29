@@ -8,10 +8,10 @@ module API
       # GET /api/v1/documents
       def index
         query = DocumentQuery.new
-                             .by_status(params[:status])
-                             .search(params[:q])
-                             .recent
-                             .with_associations
+          .by_status(params[:status])
+          .search(params[:q])
+          .recent
+          .with_associations
 
         result = paginate(query.call)
 

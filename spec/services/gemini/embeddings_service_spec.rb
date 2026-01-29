@@ -8,11 +8,11 @@ RSpec.describe Gemini::EmbeddingsService do
 
     before do
       allow(Rails.application.config).to receive(:gemini).and_return({
-        api_key: 'test-api-key',
-        embedding_model: 'text-embedding-004',
-        base_url: 'https://generativelanguage.googleapis.com/v1beta',
-        timeout: 60
-      })
+                                                                       api_key: 'test-api-key',
+                                                                       embedding_model: 'text-embedding-004',
+                                                                       base_url: 'https://generativelanguage.googleapis.com/v1beta',
+                                                                       timeout: 60
+                                                                     })
 
       stub_request(:post, /generativelanguage.googleapis.com.*embedContent/)
         .to_return(

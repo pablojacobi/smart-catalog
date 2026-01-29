@@ -71,8 +71,7 @@ module Search
       scope = apply_price_filters(scope, filters[:min_price], filters[:max_price])
       scope = apply_text_search(scope, filters[:query])
       scope = apply_stock_filter(scope, filters[:in_stock])
-      scope = apply_specification_filters(scope, filters[:specifications])
-      scope
+      apply_specification_filters(scope, filters[:specifications])
     end
 
     def apply_category_filter(scope, category)
@@ -94,8 +93,8 @@ module Search
     end
 
     def apply_price_filters(scope, min_price, max_price)
-      scope = scope.where('price >= ?', min_price) if min_price.present?
-      scope = scope.where('price <= ?', max_price) if max_price.present?
+      scope = scope.where(price: min_price..) if min_price.present?
+      scope = scope.where(price: ..max_price) if max_price.present?
       scope
     end
 

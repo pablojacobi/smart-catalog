@@ -74,9 +74,9 @@ RSpec.describe DocumentQuery do
   describe 'chaining' do
     it 'chains multiple filters' do
       results = described_class.new
-                               .completed
-                               .with_embedding
-                               .call
+        .completed
+        .with_embedding
+        .call
 
       expect(results).to eq([with_embedding])
     end

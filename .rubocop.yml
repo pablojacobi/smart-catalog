@@ -1,4 +1,6 @@
-require:
+# frozen_string_literal: true
+
+plugins:
   - rubocop-rails
   - rubocop-rspec
 
@@ -55,12 +57,6 @@ Metrics/CyclomaticComplexity:
 Metrics/PerceivedComplexity:
   Max: 25
 
-Style/ComparableClamp:
-  Enabled: false
-
-Style/OptionalBooleanParameter:
-  Enabled: false
-
 Metrics/ParameterLists:
   Max: 6
 
@@ -80,6 +76,15 @@ Style/StringLiteralsInInterpolation:
 Style/HashSyntax:
   EnforcedShorthandSyntax: either
 
+Style/ComparableClamp:
+  Enabled: false
+
+Style/OptionalBooleanParameter:
+  Enabled: false
+
+Style/ArgumentsForwarding:
+  Enabled: false
+
 # Rails
 Rails/I18nLocaleTexts:
   Enabled: false
@@ -87,6 +92,13 @@ Rails/I18nLocaleTexts:
 Rails/SkipsModelValidations:
   Exclude:
     - 'spec/**/*'
+
+Rails/Output:
+  Exclude:
+    - 'db/seeds.rb'
+
+Rails/EnvLocal:
+  Enabled: false
 
 # RSpec
 RSpec/ExampleLength:
@@ -108,6 +120,8 @@ RSpec/ContextWording:
     - without
     - if
     - for
+    - fallback
+    - in
 
 RSpec/DescribeClass:
   Exclude:
@@ -125,6 +139,9 @@ RSpec/LetSetup:
 RSpec/VerifiedDoubles:
   Enabled: false
 
+RSpec/DescribedClass:
+  Enabled: false
+
 # Disable for bin scripts
 Rails/Exit:
   Exclude:
@@ -135,17 +152,6 @@ Rails/Exit:
 Naming/MethodParameterName:
   Exclude:
     - 'spec/**/*'
-
-# Allow flexible context descriptions
-RSpec/ContextWording:
-  Prefixes:
-    - when
-    - with
-    - without
-    - if
-    - for
-    - fallback
-    - in
 
 # Ignore unreachable loop in test setup
 Lint/UnreachableLoop:
