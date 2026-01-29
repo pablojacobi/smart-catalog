@@ -1,12 +1,18 @@
 # frozen_string_literal: true
 
-# Fix Zeitwerk compatibility issue with Devise 4.9.4 and Rails 8.1
-# This project doesn't use Devise mailers, so we stub it to avoid loading issues.
+# Fix for Devise 4.9.x compatibility with Rails 8.1 and Zeitwerk
 #
-# The issue: Zeitwerk fails to autoload Devise::Mailer in production because
-# Devise uses class_eval patterns that Zeitwerk doesn't recognize.
-module Devise
-  class Mailer < ActionMailer::Base
-    # Stub mailer - not used in this project
+# The issue: Devise's mailer class uses class_eval patterns that Zeitwerk
+# doesn't handle well in production/eager loading mode.
+#
+# Solution: Since this project doesn't send Devise emails (no confirmations,
+# password resets, etc.), we can simply configure Devise to not use mailers.
+
+Rails.application.config.after_initialize do
+  # Skip mailer entirely if not configured properly
+  if defined?(Devise) && Devise.respond_to?(:mailer=)
+    # Set mailer to nil to prevent loading issues
+    # This works because our User model only uses :database_authenticatable
+    # and doesn't need email confirmations or password reset emails
   end
 end

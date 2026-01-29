@@ -6,7 +6,7 @@
 [![Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen.svg)](coverage/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A simplified Rails 8 application demonstrating enterprise AI patterns: RAG with pgvector, hybrid search, and LLM query classification using Google Gemini.
+A simplified Rails 8 application demonstrating enterprise AI patterns: RAG with pgvector, hybrid search, and LLM query classification. **Runs 100% locally with Ollama** (free) or with Google Gemini (cloud).
 
 > **Note**: This is a **simplified portfolio version** of a production system. See [Features Not Included](#features-not-included-in-this-demo) for the full list of capabilities available in the complete implementation.
 
@@ -59,49 +59,75 @@ flowchart TB
 |-----------|------------|
 | Framework | Rails 8.1 (API mode) |
 | Database | PostgreSQL 16 + pgvector |
-| LLM | Google Gemini 1.5 Flash (free tier) |
-| Embeddings | Gemini text-embedding-004 (768 dims) |
+| LLM | **Ollama** (local, free) or Google Gemini (cloud) |
+| Chat Model | llama3.2 (local) / gemini-2.0-flash (cloud) |
+| Embeddings | nomic-embed-text (local) / text-embedding-004 (cloud) |
 | Testing | RSpec + FactoryBot + WebMock |
-| Container | Docker |
+| Container | Docker + Docker Compose |
 
 ## Quick Start
 
 ### Prerequisites
 
 - Docker Desktop
-- Gemini API Key (free tier at [Google AI Studio](https://aistudio.google.com/))
+- **Optional**: Gemini API Key for cloud mode ([Google AI Studio](https://aistudio.google.com/))
 
-### 1. Clone and Configure
+### Option A: 100% Local (FREE with Ollama)
+
+No API keys required! Runs entirely on your machine.
 
 ```bash
+# 1. Clone the repo
 git clone https://github.com/your-username/smart-catalog.git
 cd smart-catalog
 
-# Create environment file
-cp .env.example .env
-# Edit .env and add your GEMINI_API_KEY
-```
-
-### 2. Start Services
-
-```bash
+# 2. Start all services (including Ollama)
 docker-compose up --build
+
+# 3. Download AI models (first time only, ~2GB)
+./bin/setup-ollama
+
+# 4. Setup database
+docker-compose exec app rails db:create db:migrate db:seed
 ```
 
-### 3. Setup Database
+The `bin/setup-ollama` script downloads:
+- **llama3.2** (~2GB): Fast chat model for query classification and responses
+- **nomic-embed-text** (~275MB): Embedding model for semantic search
+
+### Option B: Cloud Mode (Gemini)
+
+Use Google's Gemini API for faster responses (requires API key).
 
 ```bash
-# Run migrations
-docker-compose run --rm app rails db:migrate
+# 1. Clone and configure
+git clone https://github.com/your-username/smart-catalog.git
+cd smart-catalog
 
+# 2. Configure for Gemini
+cp .env.example .env
+# Edit .env:
+#   AI_PROVIDER=gemini
+#   GEMINI_API_KEY=your_key_here
+
+# 3. Start services
+docker-compose up --build
+
+# 4. Setup database
+docker-compose exec app rails db:create db:migrate db:seed
+```
+
+### Seeding Data
+
+```bash
 # Option A: Full dataset (1000+ products)
 # See db/SEED_DATA.md for details on obtaining catalog_1000.json
 cp path/to/catalog_1000.json db/
-docker-compose run --rm app rails db:seed
+docker-compose exec app rails db:seed
 
 # Option B: Small sample dataset (10 products)
 # Edit db/seeds.rb to comment out JSON loading and uncomment sample data
-docker-compose run --rm app rails db:seed
+docker-compose exec app rails db:seed
 ```
 
 > **Note**: The full dataset (`catalog_1000.json`) is not included in the repository. See [`db/SEED_DATA.md`](db/SEED_DATA.md) for instructions.
@@ -220,12 +246,35 @@ GitHub Actions runs on every push/PR:
 
 ## Environment Variables
 
+### AI Provider Selection
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `AI_PROVIDER` | AI backend: `ollama` (local) or `gemini` (cloud) | `ollama` |
+
+### Ollama (Local - FREE)
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `OLLAMA_BASE_URL` | Ollama API URL | `http://ollama:11434` |
+| `OLLAMA_MODEL` | Chat model | `llama3.2` |
+| `OLLAMA_EMBEDDING_MODEL` | Embedding model | `nomic-embed-text` |
+
+### Gemini (Cloud)
+
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `DATABASE_URL` | PostgreSQL connection string | Yes |
-| `GEMINI_API_KEY` | Google AI Studio API key | Yes |
+| `GEMINI_API_KEY` | Google AI Studio API key | If using Gemini |
 | `GEMINI_MODEL` | Chat model (default: gemini-2.0-flash) | No |
 | `GEMINI_EMBEDDING_MODEL` | Embedding model (default: text-embedding-004) | No |
+
+### Database
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DB_HOST` | PostgreSQL host | `db` |
+| `DB_USERNAME` | PostgreSQL user | `postgres` |
+| `DB_PASSWORD` | PostgreSQL password | `postgres` |
 
 ---
 

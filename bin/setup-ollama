@@ -1,0 +1,42 @@
+#!/bin/bash
+# Setup script for Ollama models
+# Run this AFTER docker-compose up to pull the required models
+
+set -e
+
+echo "==================================="
+echo "SmartCatalog - Ollama Setup"
+echo "==================================="
+
+# Wait for Ollama to be ready
+echo ""
+echo "Waiting for Ollama service..."
+until curl -s http://localhost:11434/api/tags > /dev/null 2>&1; do
+  echo "  Ollama not ready, waiting..."
+  sleep 2
+done
+echo "✓ Ollama is running"
+
+# Pull the chat model
+echo ""
+echo "Pulling llama3.2 (chat model)..."
+echo "  This may take a few minutes on first run..."
+docker-compose exec ollama ollama pull llama3.2
+echo "✓ llama3.2 ready"
+
+# Pull the embeddings model
+echo ""
+echo "Pulling nomic-embed-text (embeddings model)..."
+docker-compose exec ollama ollama pull nomic-embed-text
+echo "✓ nomic-embed-text ready"
+
+echo ""
+echo "==================================="
+echo "✓ Ollama setup complete!"
+echo "==================================="
+echo ""
+echo "Models available:"
+docker-compose exec ollama ollama list
+echo ""
+echo "You can now start using SmartCatalog with local AI."
+echo "To test: curl http://localhost:3000/health"

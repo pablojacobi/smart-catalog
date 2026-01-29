@@ -49,8 +49,8 @@ module Chat
       - Always mention if a product is out of stock
     PROMPT
 
-    def initialize(gemini_client: nil, context_builder: nil, classifier: nil)
-      @gemini_client = gemini_client || Gemini::ClientService.new
+    def initialize(ai_client: nil, gemini_client: nil, context_builder: nil, classifier: nil)
+      @ai_client = ai_client || gemini_client || Ai::ProviderService.client
       @context_builder = context_builder || ContextBuilderService.new
       @classifier = classifier || QueryClassifierService.new
     end
@@ -102,7 +102,7 @@ module Chat
 
     def stream_response(messages, &)
       full_response = +''
-      @gemini_client.stream_content(messages, temperature: 0.7) do |chunk|
+      @ai_client.stream_content(messages, temperature: 0.7) do |chunk|
         full_response << chunk
         yield chunk if block_given?
       end
@@ -134,7 +134,7 @@ module Chat
       previous_products = []
       if conversation.previous_product_ids.any?
         previous_products = Product.where(id: conversation.previous_product_ids)
-          .includes(:brand, :category).to_a
+                                   .includes(:brand, :category).to_a
       end
 
       { previous_products: previous_products }
@@ -142,7 +142,7 @@ module Chat
 
     def build_contextual_response(previous_products, _message)
       # Format previous products as context for follow-up questions
-      markdown = "## Products from previous response (#{previous_products.size})\n"
+      markdown = +"## Products from previous response (#{previous_products.size})\n"
       markdown << "The user is asking about THESE SPECIFIC products:\n\n"
 
       previous_products.each_with_index do |product, index|
