@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+
+# Remove potentially pre-existing server.pid
+rm -f /app/tmp/pids/server.pid
+
+# Run database migrations
+if [ "$RAILS_ENV" = "production" ]; then
+  echo "Running database migrations..."
+  bundle exec rails db:migrate
+fi
+
+# Execute the main container command
+exec "$@"
