@@ -11,14 +11,14 @@ export default class extends Controller {
 
   send(event) {
     event.preventDefault()
-    
+
     const message = this.inputTarget.value.trim()
     if (!message || this.isStreaming) return
 
     this.addUserMessage(message)
     this.inputTarget.value = ""
     this.startStreaming()
-    
+
     // Hide welcome message on first interaction
     if (this.hasWelcomeTarget) {
       this.welcomeTarget.classList.add("hidden")
@@ -101,7 +101,7 @@ export default class extends Controller {
     const messageElement = this.addAssistantMessage()
     const contentElement = messageElement.querySelector("[data-content]")
     const typingIndicator = messageElement.querySelector(".typing-indicator")
-    
+
     let fullContent = ""
 
     try {
@@ -116,7 +116,9 @@ export default class extends Controller {
         if (typingIndicator) {
           typingIndicator.remove()
         }
-        fullContent += event.data
+        // Decode escaped newlines from SSE
+        const chunk = event.data.replace(/\\n/g, '\n').replace(/\\r/g, '\r')
+        fullContent += chunk
         contentElement.innerHTML = this.renderMarkdown(fullContent)
         this.scrollToBottom()
       })

@@ -24,7 +24,7 @@ module Search
       Rails.logger.info("[SqlSearch] Filters: #{filters.inspect}")
       start_time = Time.current
 
-      scope = Product.active.includes(:category, :brand, :document)
+      scope = Product.active.includes(:category, :brand)
 
       scope = apply_filters(scope, filters)
       scope = scope.limit(limit)
@@ -71,16 +71,46 @@ module Search
       scope = apply_price_filters(scope, filters[:min_price], filters[:max_price])
       scope = apply_text_search(scope, filters[:query])
       scope = apply_stock_filter(scope, filters[:in_stock])
-      apply_specification_filters(scope, filters[:specifications])
+      scope = apply_specification_filters(scope, filters[:specifications])
+      scope
     end
 
     def apply_category_filter(scope, category)
       return scope if category.blank?
 
-      category_record = Category.find_by('slug = ? OR name ILIKE ?', category, category)
+      # Normalize category name (handle synonyms/translations)
+      normalized_category = normalize_category_name(category)
+
+      category_record = Category.find_by('slug = ? OR name ILIKE ?', normalized_category, normalized_category)
       return scope.none unless category_record
 
       scope.where(category_id: category_record.id)
+    end
+
+    def normalize_category_name(category)
+      # Map common synonyms and translations to DB category names
+      category_mappings = {
+        # Spanish translations
+        'computadores' => 'laptops',
+        'computadoras' => 'laptops',
+        'portatiles' => 'laptops',
+        'portátiles' => 'laptops',
+        'notebooks' => 'laptops',
+        'ordenadores' => 'laptops',
+        'tabletas' => 'tablets',
+        'accesorios' => 'mobile-accessories',
+        'accesorios moviles' => 'mobile-accessories',
+        'accesorios móviles' => 'mobile-accessories',
+        # English synonyms
+        'computers' => 'laptops',
+        'notebook' => 'laptops',
+        'laptop' => 'laptops',
+        'tablet' => 'tablets',
+        'accessories' => 'mobile-accessories',
+        'mobile accessories' => 'mobile-accessories'
+      }
+
+      category_mappings[category.to_s.downcase.strip] || category
     end
 
     def apply_brand_filter(scope, brand)
@@ -93,8 +123,8 @@ module Search
     end
 
     def apply_price_filters(scope, min_price, max_price)
-      scope = scope.where(price: min_price..) if min_price.present?
-      scope = scope.where(price: ..max_price) if max_price.present?
+      scope = scope.where('price >= ?', min_price) if min_price.present?
+      scope = scope.where('price <= ?', max_price) if max_price.present?
       scope
     end
 
@@ -114,10 +144,46 @@ module Search
       return scope if specs.blank?
 
       specs.each do |key, value|
-        scope = scope.where('specifications @> ?', { key => value }.to_json)
+        next if value.blank?
+
+        # Try multiple key variations for flexibility
+        possible_keys = specification_key_variations(key)
+
+        # Build OR condition for all possible keys with ILIKE matching
+        conditions = possible_keys.map do |k|
+          scope.where("specifications->>? ILIKE ?", k, "%#{value}%")
+        end
+
+        # Combine with OR
+        combined = conditions.reduce { |acc, cond| acc.or(cond) }
+        scope = combined || scope.none
       end
 
       scope
+    end
+
+    def specification_key_variations(key)
+      key_str = key.to_s
+
+      # Map common query terms to DB specification keys
+      key_mappings = {
+        'graphics_card' => ['gpu'],
+        'graphics' => ['gpu'],
+        'video_card' => ['gpu'],
+        'processor' => ['cpu'],
+        'memory' => ['ram_gb', 'RAM'],
+        'operating_system' => ['os']
+      }
+
+      # Start with the original key in different cases
+      variations = [key_str, key_str.downcase, key_str.upcase]
+
+      # Add mapped keys if applicable
+      if key_mappings[key_str.downcase]
+        variations.concat(key_mappings[key_str.downcase])
+      end
+
+      variations.uniq
     end
   end
 end

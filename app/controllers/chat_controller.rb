@@ -60,7 +60,10 @@ class ChatController < ApplicationController
 
   def write_sse_event(event, data)
     response.stream.write("event: #{event}\n")
-    response.stream.write("data: #{data}\n\n")
+    # SSE requires each line of data to be prefixed with 'data: '
+    # Multi-line data needs each line prefixed, or we encode newlines
+    encoded_data = data.to_s.gsub("\n", '\n').gsub("\r", '\r')
+    response.stream.write("data: #{encoded_data}\n\n")
   rescue IOError
     # Client disconnected
     Rails.logger.info('[ChatStream] Client disconnected')

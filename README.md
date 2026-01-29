@@ -35,7 +35,7 @@ flowchart TB
     end
 
     subgraph ai [AI Services - Gemini]
-        GeminiChat[gemini-1.5-flash]
+        GeminiChat[gemini-205-flash]
         GeminiEmbed[text-embedding-004]
     end
 

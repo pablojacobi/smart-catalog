@@ -25,8 +25,7 @@ RSpec.describe Chat::OrchestratorService do
       allow(classifier).to receive(:call).and_return({
                                                        query_type: 'listing',
                                                        filters: {},
-                                                       search_query: 'laptops',
-                                                       needs_document_search: false
+                                                       search_query: 'laptops'
                                                      })
 
       allow(search_service).to receive(:call).and_return(
@@ -68,8 +67,7 @@ RSpec.describe Chat::OrchestratorService do
         allow(classifier).to receive(:call).and_return({
                                                          query_type: 'count',
                                                          filters: {},
-                                                         search_query: '',
-                                                         needs_document_search: false
+                                                         search_query: ''
                                                        })
 
         allow(sql_service).to receive(:count).and_return({ total: 100 })
@@ -92,8 +90,7 @@ RSpec.describe Chat::OrchestratorService do
         allow(classifier).to receive(:call).and_return({
                                                          query_type: 'contextual',
                                                          filters: { max_price: 300 },
-                                                         search_query: '',
-                                                         needs_document_search: false
+                                                         search_query: ''
                                                        })
       end
 
@@ -112,8 +109,7 @@ RSpec.describe Chat::OrchestratorService do
         allow(classifier).to receive(:call).and_return({
                                                          query_type: 'conversational',
                                                          filters: {},
-                                                         search_query: '',
-                                                         needs_document_search: false
+                                                         search_query: ''
                                                        })
 
         allow(response_builder).to receive(:call).and_return({
@@ -148,8 +144,7 @@ RSpec.describe Chat::OrchestratorService do
         allow(classifier).to receive(:call).and_return({
                                                          query_type: 'contextual',
                                                          filters: { in_stock: true },
-                                                         search_query: '',
-                                                         needs_document_search: false
+                                                         search_query: ''
                                                        })
 
         allow(response_builder).to receive(:call) do |args|
@@ -165,8 +160,7 @@ RSpec.describe Chat::OrchestratorService do
         allow(classifier).to receive(:call).and_return({
                                                          query_type: 'contextual',
                                                          filters: { min_price: 100 },
-                                                         search_query: '',
-                                                         needs_document_search: false
+                                                         search_query: ''
                                                        })
 
         allow(response_builder).to receive(:call) do |args|
@@ -187,8 +181,7 @@ RSpec.describe Chat::OrchestratorService do
         allow(classifier).to receive(:call).and_return({
                                                          query_type: 'contextual',
                                                          filters: { category: 'electronics' },
-                                                         search_query: '',
-                                                         needs_document_search: false
+                                                         search_query: ''
                                                        })
 
         allow(response_builder).to receive(:call) do |args|
@@ -208,8 +201,7 @@ RSpec.describe Chat::OrchestratorService do
         allow(classifier).to receive(:call).and_return({
                                                          query_type: 'contextual',
                                                          filters: { brand: 'apple' },
-                                                         search_query: '',
-                                                         needs_document_search: false
+                                                         search_query: ''
                                                        })
 
         allow(response_builder).to receive(:call) do |args|

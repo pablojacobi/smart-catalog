@@ -48,7 +48,7 @@ module Gemini
         }
       }
 
-      stream_post("/models/#{model}:streamGenerateContent", body, &block)
+      stream_generate("/models/#{model}:streamGenerateContent", body, &block)
     end
 
     # Generate embeddings
@@ -69,7 +69,7 @@ module Gemini
     private
 
     def connection
-      @connection ||= Faraday.new(url: @base_url) do |f|
+      @connection ||= Faraday.new do |f|
         f.request :json
         f.response :json
         f.options.timeout = @config[:timeout]
@@ -78,56 +78,12 @@ module Gemini
       end
     end
 
-    def streaming_connection
-      @streaming_connection ||= Faraday.new(url: @base_url) do |f|
-        f.request :json
-        f.options.timeout = 120 # Longer timeout for streaming
-        f.options.open_timeout = 10
-        f.adapter Faraday.default_adapter
-      end
-    end
-
-    def stream_post(endpoint, body, &)
-      url = "#{@base_url}#{endpoint}?key=#{@api_key}&alt=sse"
-      buffer = +''
-
-      streaming_connection.post(url) do |req|
-        req.body = body.to_json
-        req.headers['Content-Type'] = 'application/json'
-        req.options.on_data = proc do |chunk, _size, _env|
-          buffer << chunk
-          process_sse_buffer(buffer, &)
-        end
-      end
-    rescue Faraday::TimeoutError, Faraday::ConnectionFailed => e
-      raise SmartCatalog::ServiceUnavailableError, "Gemini streaming unavailable: #{e.message}"
-    end
-
-    def process_sse_buffer(buffer, &block)
-      while (line_end = buffer.index("\n"))
-        line = buffer.slice!(0, line_end + 1).strip
-        next if line.empty?
-
-        next unless line.start_with?('data: ')
-
-        json_str = line[6..]
-        next if json_str == '[DONE]'
-
-        begin
-          data = JSON.parse(json_str)
-          text = data.dig('candidates', 0, 'content', 'parts', 0, 'text')
-          yield text if text && block
-        rescue JSON::ParserError
-          # Ignore malformed JSON chunks
-        end
-      end
-    end
-
     def post(endpoint, body)
       retries = 0
+      full_url = "#{@base_url}#{endpoint}?key=#{@api_key}"
 
       begin
-        response = connection.post("#{endpoint}?key=#{@api_key}") do |req|
+        response = connection.post(full_url) do |req|
           req.body = body
         end
 
@@ -138,7 +94,59 @@ module Gemini
           sleep(2**retries)
           retry
         end
-        raise SmartCatalog::ServiceUnavailableError, "Gemini API unavailable: #{e.message}"
+        raise SmartCatalog::ServiceUnavailableError.new("Gemini API unavailable: #{e.message}")
+      end
+    end
+
+    def stream_generate(endpoint, body, &block)
+      url = "#{@base_url}#{endpoint}?key=#{@api_key}&alt=sse"
+      buffer = +''
+
+      http_stream_request(url, body) do |chunk|
+        buffer << chunk
+        process_sse_buffer(buffer, &block)
+      end
+    rescue Faraday::TimeoutError, Faraday::ConnectionFailed, Errno::ECONNRESET => e
+      raise SmartCatalog::ServiceUnavailableError.new("Gemini streaming unavailable: #{e.message}")
+    end
+
+    def http_stream_request(url, body)
+      uri = URI(url)
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+      http.read_timeout = 120
+      http.open_timeout = 10
+
+      request = Net::HTTP::Post.new(uri)
+      request['Content-Type'] = 'application/json'
+      request.body = body.to_json
+
+      http.request(request) do |response|
+        response.read_body do |chunk|
+          yield chunk
+        end
+      end
+    end
+
+    def process_sse_buffer(buffer, &block)
+      # Handle both \r\n and \n line endings
+      while (line_end = buffer.index(/\r?\n/))
+        match = buffer.match(/\r?\n/)
+        line = buffer.slice!(0, line_end + match[0].length).strip
+        next if line.empty?
+
+        if line.start_with?('data: ')
+          json_str = line[6..]
+          next if json_str == '[DONE]'
+
+          begin
+            data = JSON.parse(json_str)
+            text = data.dig('candidates', 0, 'content', 'parts', 0, 'text')
+            yield text if text && block
+          rescue JSON::ParserError
+            # Ignore malformed JSON chunks
+          end
+        end
       end
     end
 
@@ -147,20 +155,26 @@ module Gemini
       when 200..299
         response.body
       when 400
-        raise SmartCatalog::ValidationError, "Bad request: #{extract_error(response)}"
+        raise SmartCatalog::ValidationError.new("Bad request: #{extract_error(response)}")
       when 401, 403
-        raise SmartCatalog::AuthenticationError, "Authentication failed: #{extract_error(response)}"
+        raise SmartCatalog::AuthenticationError.new("Authentication failed: #{extract_error(response)}")
       when 429
-        raise SmartCatalog::RateLimitError, "Rate limit exceeded: #{extract_error(response)}"
+        raise SmartCatalog::RateLimitError.new("Rate limit exceeded: #{extract_error(response)}")
       when 500..599
-        raise SmartCatalog::ServiceUnavailableError, "Gemini service error: #{extract_error(response)}"
+        raise SmartCatalog::ServiceUnavailableError.new("Gemini service error: #{extract_error(response)}")
       else
-        raise SmartCatalog::Error, "Unexpected response: #{response.status}"
+        raise SmartCatalog::Error.new("Unexpected response: #{response.status} - #{extract_error(response)}")
       end
     end
 
     def extract_error(response)
-      response.body.dig('error', 'message') || response.body.to_s[0, 200]
+      return '' if response.body.nil? || response.body.empty?
+
+      if response.body.is_a?(Hash)
+        response.body.dig('error', 'message') || response.body.to_s[0, 200]
+      else
+        response.body.to_s[0, 200]
+      end
     end
 
     def format_messages(messages)
@@ -175,7 +189,7 @@ module Gemini
 
     def parse_generate_response(response)
       candidates = response['candidates'] || []
-      return nil if candidates.empty?
+      return { content: nil, finish_reason: nil, usage: nil } if candidates.empty?
 
       content = candidates.first.dig('content', 'parts', 0, 'text')
 

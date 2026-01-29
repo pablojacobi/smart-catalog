@@ -19,9 +19,6 @@ Rails.application.routes.draw do
       # Products
       resources :products, only: %i[index show]
 
-      # Documents (read-only in this demo)
-      resources :documents, only: %i[index show]
-
       # Categories and Brands
       resources :categories, only: %i[index show]
       resources :brands, only: %i[index show]

@@ -63,10 +63,6 @@ RSpec.describe ProductBlueprint do
       expect(result[:created_at]).to be_present
       expect(result[:updated_at]).to be_present
     end
-
-    it 'includes document_id' do
-      expect(result).to have_key(:document_id)
-    end
   end
 
   describe 'minimal view' do

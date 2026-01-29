@@ -20,7 +20,6 @@ class ProductBlueprint < ApplicationBlueprint
     include_view :normal
 
     field :specifications
-    field :document_id
 
     field :created_at do |product, _options|
       format_datetime(product.created_at)

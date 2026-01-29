@@ -37,11 +37,8 @@ module Chat
           "in_stock": null or boolean,
           "specifications": {} or {key: value}
         },
-        "search_query": "extracted search terms",
-        "needs_document_search": true or false
+        "search_query": "extracted search terms"
       }
-
-      Set needs_document_search to true only when semantic document search would help (complex queries, specs not in structured data).
     PROMPT
 
     def initialize(client: nil)
@@ -92,16 +89,37 @@ module Chat
     def parse_classification(content)
       return default_classification if content.blank?
 
-      parsed = JSON.parse(content)
+      # Extract JSON from markdown code blocks if present
+      json_content = extract_json_from_response(content)
+
+      parsed = JSON.parse(json_content)
 
       {
         query_type: parsed['query_type'] || 'listing',
         filters: normalize_filters(parsed['filters']),
-        search_query: parsed['search_query'] || '',
-        needs_document_search: parsed['needs_document_search'] || false
+        search_query: parsed['search_query'] || ''
       }
-    rescue JSON::ParserError
+    rescue JSON::ParserError => e
+      Rails.logger.warn("[QueryClassifier] JSON parse error: #{e.message}, content: #{content.truncate(200)}")
       default_classification
+    end
+
+    def extract_json_from_response(content)
+      # Try to extract JSON from markdown code blocks
+      if content.include?('```')
+        # Match ```json ... ``` or ``` ... ```
+        match = content.match(/```(?:json)?\s*\n?(.*?)\n?```/m)
+        return match[1].strip if match
+      end
+
+      # If no code block, try to find raw JSON
+      if content.strip.start_with?('{')
+        content.strip
+      else
+        # Try to find JSON object anywhere in the content
+        match = content.match(/\{[^}]*"query_type"[^}]*\}/m)
+        match ? match[0] : content.strip
+      end
     end
 
     def normalize_filters(filters)
@@ -129,8 +147,7 @@ module Chat
       {
         query_type: 'listing',
         filters: {},
-        search_query: '',
-        needs_document_search: false
+        search_query: ''
       }
     end
 
@@ -147,8 +164,7 @@ module Chat
       {
         query_type: type,
         filters: {},
-        search_query: query,
-        needs_document_search: true
+        search_query: query
       }
     end
   end

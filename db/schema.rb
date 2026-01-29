@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2024_01_01_000008) do
+ActiveRecord::Schema[8.1].define(version: 2024_01_01_000009) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -42,24 +42,6 @@ ActiveRecord::Schema[8.1].define(version: 2024_01_01_000008) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "documents", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.text "content"
-    t.integer "content_length", default: 0
-    t.string "content_type"
-    t.datetime "created_at", null: false
-    t.vector "embedding", limit: 768
-    t.string "filename", null: false
-    t.jsonb "metadata", default: {}
-    t.datetime "processed_at"
-    t.string "status", default: "pending"
-    t.string "storage_path"
-    t.text "summary"
-    t.datetime "updated_at", null: false
-    t.index ["filename"], name: "index_documents_on_filename"
-    t.index ["processed_at"], name: "index_documents_on_processed_at"
-    t.index ["status"], name: "index_documents_on_status"
-  end
-
   create_table "messages", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.text "content", null: false
     t.uuid "conversation_id", null: false
@@ -78,7 +60,7 @@ ActiveRecord::Schema[8.1].define(version: 2024_01_01_000008) do
     t.datetime "created_at", null: false
     t.string "currency", default: "USD"
     t.text "description"
-    t.uuid "document_id"
+    t.vector "embedding", limit: 768
     t.boolean "in_stock", default: true
     t.string "name", null: false
     t.decimal "price", precision: 12, scale: 2
@@ -89,7 +71,7 @@ ActiveRecord::Schema[8.1].define(version: 2024_01_01_000008) do
     t.datetime "updated_at", null: false
     t.index ["brand_id"], name: "index_products_on_brand_id"
     t.index ["category_id"], name: "index_products_on_category_id"
-    t.index ["document_id"], name: "index_products_on_document_id"
+    t.index ["embedding"], name: "index_products_on_embedding", opclass: :vector_cosine_ops, using: :ivfflat
     t.index ["in_stock"], name: "index_products_on_in_stock"
     t.index ["name"], name: "index_products_on_name"
     t.index ["price"], name: "index_products_on_price"
@@ -101,5 +83,4 @@ ActiveRecord::Schema[8.1].define(version: 2024_01_01_000008) do
   add_foreign_key "messages", "conversations"
   add_foreign_key "products", "brands"
   add_foreign_key "products", "categories"
-  add_foreign_key "products", "documents"
 end
