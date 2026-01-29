@@ -64,3 +64,4 @@ Thumbs.db
 
 # Test artifacts
 spec/examples.txt
+script/

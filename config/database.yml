@@ -4,17 +4,25 @@ default: &default
   adapter: postgresql
   encoding: unicode
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
+development:
+  <<: *default
+  <% if ENV['DATABASE_URL'] %>
+  url: <%= ENV['DATABASE_URL'] %>
+  <% else %>
   host: <%= ENV.fetch('DB_HOST', 'db') %>
   username: <%= ENV.fetch('DB_USERNAME', 'postgres') %>
   password: <%= ENV.fetch('DB_PASSWORD', 'postgres') %>
   port: <%= ENV.fetch('DB_PORT', 5432) %>
-
-development:
-  <<: *default
   database: smart_catalog_development
+  <% end %>
 
 test:
   <<: *default
+  host: <%= ENV.fetch('DB_HOST', 'db') %>
+  username: <%= ENV.fetch('DB_USERNAME', 'postgres') %>
+  password: <%= ENV.fetch('DB_PASSWORD', 'postgres') %>
+  port: <%= ENV.fetch('DB_PORT', 5432) %>
   database: smart_catalog_test
 
 production:
