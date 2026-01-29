@@ -27,6 +27,9 @@ RUN bundle lock --add-platform x86_64-linux && \
 # Copy application
 COPY . .
 
+# Create required directories
+RUN mkdir -p tmp/pids tmp/cache tmp/sockets log
+
 # Expose port
 EXPOSE 3000
 
