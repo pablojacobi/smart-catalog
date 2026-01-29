@@ -130,7 +130,8 @@ module Chat
         content.strip
       else
         # Try to find JSON object anywhere in the content
-        match = content.match(/\{[^}]*"query_type"[^}]*\}/m)
+        # Match opening brace, content with query_type, and handle nested braces
+        match = content.match(/\{(?:[^{}]|\{[^{}]*\})*"query_type"(?:[^{}]|\{[^{}]*\})*\}/m)
         match ? match[0] : content.strip
       end
     end

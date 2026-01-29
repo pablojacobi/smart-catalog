@@ -155,5 +155,93 @@ RSpec.describe Chat::QueryClassifierService do
         expect(result[:query_type]).to eq('listing')
       end
     end
+
+    context 'when extracting JSON from markdown code blocks' do
+      it 'extracts JSON from ```json code block' do
+        response_text = <<~MARKDOWN
+          Here is the classification:
+          ```json
+          {"query_type": "listing", "filters": {}, "search_query": "test"}
+          ```
+        MARKDOWN
+
+        stub_gemini_chat(response_text)
+        result = service.call('Test query')
+
+        expect(result[:query_type]).to eq('listing')
+      end
+
+      it 'extracts JSON from ``` code block without language' do
+        response_text = <<~MARKDOWN
+          ```
+          {"query_type": "count", "filters": {}, "search_query": "test"}
+          ```
+        MARKDOWN
+
+        stub_gemini_chat(response_text)
+        result = service.call('Test query')
+
+        expect(result[:query_type]).to eq('count')
+      end
+
+      it 'extracts JSON object embedded in text' do
+        response_text = 'The classification is: {"query_type": "comparison", "filters": {}, "search_query": "test"} done'
+
+        stub_gemini_chat(response_text)
+        result = service.call('Test query')
+
+        expect(result[:query_type]).to eq('comparison')
+      end
+    end
+
+    context 'with edge cases in normalize_filters' do
+      it 'handles nil filters' do
+        response_text = {
+          query_type: 'listing',
+          filters: nil,
+          search_query: 'test'
+        }.to_json
+
+        stub_gemini_chat(response_text)
+        result = service.call('Test query')
+
+        expect(result[:filters]).to eq({})
+      end
+
+      it 'handles non-hash specifications' do
+        response_text = {
+          query_type: 'listing',
+          filters: { specifications: 'not a hash' },
+          search_query: 'test'
+        }.to_json
+
+        stub_gemini_chat(response_text)
+        result = service.call('Test query')
+
+        expect(result[:filters][:specifications]).to eq({})
+      end
+
+      it 'handles in_stock filter' do
+        response_text = {
+          query_type: 'listing',
+          filters: { in_stock: true },
+          search_query: 'test'
+        }.to_json
+
+        stub_gemini_chat(response_text)
+        result = service.call('In stock laptops')
+
+        expect(result[:filters][:in_stock]).to be true
+      end
+    end
+
+    context 'when content is blank' do
+      it 'returns default classification for empty content' do
+        stub_gemini_chat('')
+        result = service.call('Test query')
+
+        expect(result[:query_type]).to eq('listing')
+      end
+    end
   end
 end

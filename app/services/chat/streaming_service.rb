@@ -60,55 +60,19 @@ module Chat
     # @param message [String] User's message
     # @yield [String] Yields each text chunk as it arrives
     # @return [Hash] Final response metadata
-    def call(conversation:, message:, &block)
+    def call(conversation:, message:, &)
       Rails.logger.info("[StreamingService] Processing: '#{message.truncate(80)}'")
       start_time = Time.current
 
-      # Store user message
       conversation.add_message(role: 'user', content: message)
-
-      # Classify the query to extract filters
-      conv_context = build_conversation_context(conversation)
-      classification = @classifier.call(message, context: conv_context)
-
-      # For contextual queries, use previous products instead of searching new ones
-      context = if classification[:query_type] == 'contextual' && conv_context[:previous_products].any?
-                  build_contextual_response(conv_context[:previous_products], message)
-                else
-                  @context_builder.call(
-                    query: classification[:search_query] || message,
-                    filters: classification[:filters] || {}
-                  )
-                end
-
-      # Build messages for LLM
+      context = determine_context(conversation, message)
       messages = build_messages(message, context[:markdown], conversation)
 
-      # Stream response
-      full_response = +''
-      @gemini_client.stream_content(messages, temperature: 0.7) do |chunk|
-        full_response << chunk
-        yield chunk if block_given?
-      end
-
-      # Store assistant message
+      full_response = stream_response(messages, &)
       product_ids = context[:products].map(&:id)
-      conversation.add_message(
-        role: 'assistant',
-        content: full_response,
-        metadata: { product_ids: product_ids }
-      )
 
-      duration = Time.current - start_time
-      Rails.logger.info("[StreamingService] Completed in #{duration.round(2)}s")
-
-      {
-        content: full_response,
-        conversation_id: conversation.id,
-        product_ids: product_ids,
-        statistics: context[:statistics],
-        duration_ms: (duration * 1000).round
-      }
+      store_assistant_response(conversation, full_response, product_ids)
+      build_result(full_response, conversation, product_ids, context[:statistics], start_time)
     end
 
     # Non-streaming version for API compatibility
@@ -122,11 +86,55 @@ module Chat
 
     private
 
+    def determine_context(conversation, message)
+      conv_context = build_conversation_context(conversation)
+      classification = @classifier.call(message, context: conv_context)
+
+      if classification[:query_type] == 'contextual' && conv_context[:previous_products].any?
+        build_contextual_response(conv_context[:previous_products], message)
+      else
+        @context_builder.call(
+          query: classification[:search_query] || message,
+          filters: classification[:filters] || {}
+        )
+      end
+    end
+
+    def stream_response(messages, &)
+      full_response = +''
+      @gemini_client.stream_content(messages, temperature: 0.7) do |chunk|
+        full_response << chunk
+        yield chunk if block_given?
+      end
+      full_response
+    end
+
+    def store_assistant_response(conversation, content, product_ids)
+      conversation.add_message(
+        role: 'assistant',
+        content: content,
+        metadata: { product_ids: product_ids }
+      )
+    end
+
+    def build_result(content, conversation, product_ids, statistics, start_time)
+      duration = Time.current - start_time
+      Rails.logger.info("[StreamingService] Completed in #{duration.round(2)}s")
+
+      {
+        content: content,
+        conversation_id: conversation.id,
+        product_ids: product_ids,
+        statistics: statistics,
+        duration_ms: (duration * 1000).round
+      }
+    end
+
     def build_conversation_context(conversation)
       previous_products = []
       if conversation.previous_product_ids.any?
         previous_products = Product.where(id: conversation.previous_product_ids)
-                                   .includes(:brand, :category).to_a
+          .includes(:brand, :category).to_a
       end
 
       { previous_products: previous_products }
@@ -134,7 +142,7 @@ module Chat
 
     def build_contextual_response(previous_products, _message)
       # Format previous products as context for follow-up questions
-      markdown = +"## Products from previous response (#{previous_products.size})\n"
+      markdown = "## Products from previous response (#{previous_products.size})\n"
       markdown << "The user is asking about THESE SPECIFIC products:\n\n"
 
       previous_products.each_with_index do |product, index|
