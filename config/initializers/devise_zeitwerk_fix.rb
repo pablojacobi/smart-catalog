@@ -2,30 +2,14 @@
 
 # Fix for Devise 4.9.x + Rails 8.1 + Zeitwerk compatibility
 #
-# Problem: In production, Zeitwerk eager loads ALL files including Devise's mailer.
-# Devise::Mailer uses inheritance patterns that Zeitwerk can't resolve properly.
+# Problem: Devise::Mailer needs a parent mailer class to inherit from.
+# By default it looks for ApplicationMailer.
 #
-# Solution: Since we don't use Devise email features (no :confirmable, :recoverable),
-# we pre-define Devise::Mailer as a stub before Zeitwerk tries to autoload it.
+# Solution: We've created app/mailers/application_mailer.rb and configured
+# Devise to use it via config.parent_mailer = 'ApplicationMailer' in devise.rb
 #
-# This initializer runs early (alphabetically before 'd') and creates the constant
-# so Zeitwerk won't try to load the problematic file.
-
-if Rails.env.production?
-  # Ensure ActionMailer is loaded first
-  require 'action_mailer' unless defined?(ActionMailer)
-
-  # Pre-define Devise::Mailer to prevent Zeitwerk from trying to load it
-  module Devise
-    class Mailer < ApplicationMailer
-      # Stub mailer - we don't use Devise email features
-      def self.method_missing(method, *_args)
-        new.tap { |m| m.class.define_method(method) { |*| self } }
-      end
-
-      def self.respond_to_missing?(*)
-        true
-      end
-    end
-  end
-end
+# This is the standard Rails approach and works properly with Zeitwerk.
+# Even though we don't use Devise email features (:confirmable, :recoverable),
+# Zeitwerk still tries to load Devise::Mailer during eager loading in production.
+#
+# No code needed here - this file documents the fix for future reference.
