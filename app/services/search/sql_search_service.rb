@@ -150,7 +150,7 @@ module Search
 
         # Normalize value - extract numeric part for values like "32GB"
         normalized_value = normalize_spec_value(value)
-        search_values = [value, normalized_value].uniq.reject(&:blank?)
+        search_values = [value, normalized_value].uniq.compact_blank
 
         # Build OR condition for all possible key+value combinations
         conditions = []

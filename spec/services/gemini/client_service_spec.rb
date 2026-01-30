@@ -7,12 +7,12 @@ RSpec.describe Gemini::ClientService do
 
   before do
     allow(Rails.application.config).to receive(:gemini).and_return({
-      api_key: 'test-api-key',
-      model: 'gemini-1.5-flash',
-      embedding_model: 'text-embedding-004',
-      base_url: 'https://generativelanguage.googleapis.com/v1beta',
-      timeout: 60
-    })
+                                                                     api_key: 'test-api-key',
+                                                                     model: 'gemini-1.5-flash',
+                                                                     embedding_model: 'text-embedding-004',
+                                                                     base_url: 'https://generativelanguage.googleapis.com/v1beta',
+                                                                     timeout: 60
+                                                                   })
   end
 
   describe '#generate_content' do
@@ -260,10 +260,7 @@ RSpec.describe Gemini::ClientService do
         allow(mock_http).to receive(:open_timeout=)
         allow(mock_http).to receive(:request).and_yield(mock_response)
 
-        allow(mock_response).to receive(:read_body) do |&block|
-          block.call("data: {invalid json}\n\n")
-          block.call("data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Valid\"}]}}]}\n\n")
-        end
+        allow(mock_response).to receive(:read_body).and_yield("data: {invalid json}\n\n").and_yield("data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Valid\"}]}}]}\n\n")
       end
 
       it 'ignores malformed JSON and continues' do
@@ -284,10 +281,7 @@ RSpec.describe Gemini::ClientService do
         allow(mock_http).to receive(:open_timeout=)
         allow(mock_http).to receive(:request).and_yield(mock_response)
 
-        allow(mock_response).to receive(:read_body) do |&block|
-          block.call("data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Hello\"}]}}]}\n\n")
-          block.call("data: [DONE]\n\n")
-        end
+        allow(mock_response).to receive(:read_body).and_yield("data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Hello\"}]}}]}\n\n").and_yield("data: [DONE]\n\n")
       end
 
       it 'stops processing at [DONE]' do

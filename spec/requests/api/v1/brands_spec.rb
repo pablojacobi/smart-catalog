@@ -22,7 +22,7 @@ RSpec.describe 'Api::V1::Brands' do
       get '/api/v1/brands'
 
       json = response.parsed_body
-      names = json['data'].map { |b| b['name'] }
+      names = json['data'].pluck('name')
 
       expect(names).to eq(%w[Apple Samsung Sony])
     end
@@ -38,7 +38,7 @@ RSpec.describe 'Api::V1::Brands' do
         get '/api/v1/brands', params: { with_products: 'true' }
 
         json = response.parsed_body
-        names = json['data'].map { |b| b['name'] }
+        names = json['data'].pluck('name')
 
         expect(names).to eq(['Apple'])
       end

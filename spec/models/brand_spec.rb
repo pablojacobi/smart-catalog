@@ -7,7 +7,7 @@ RSpec.describe Brand do
     subject { build(:brand) }
 
     it { is_expected.to validate_presence_of(:name) }
-    # Note: slug is auto-generated from name, so presence validation always passes
+    # NOTE: slug is auto-generated from name, so presence validation always passes
     it { is_expected.to validate_uniqueness_of(:slug) }
   end
 

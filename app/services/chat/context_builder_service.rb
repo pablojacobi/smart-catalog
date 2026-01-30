@@ -50,8 +50,8 @@ module Chat
     def apply_filters(scope, filters)
       scope = scope.joins(:category).where(categories: { slug: filters[:category] }) if filters[:category]
       scope = scope.joins(:brand).where(brands: { slug: filters[:brand] }) if filters[:brand]
-      scope = scope.where('price >= ?', filters[:min_price]) if filters[:min_price]
-      scope = scope.where('price <= ?', filters[:max_price]) if filters[:max_price]
+      scope = scope.where(price: (filters[:min_price])..) if filters[:min_price]
+      scope = scope.where(price: ..(filters[:max_price])) if filters[:max_price]
       scope = scope.in_stock if filters[:in_stock]
       scope
     end
@@ -94,7 +94,7 @@ module Chat
         limit: MAX_PRODUCTS
       )
 
-      results.map { |r| r[:product] }
+      results.pluck(:product)
     end
 
     def format_context_markdown(statistics, products)
@@ -118,9 +118,7 @@ module Chat
         markdown << "- Price range: $#{stats[:price_range][:min]} - $#{stats[:price_range][:max]}\n"
       end
 
-      if stats[:cheapest]
-        markdown << "- Cheapest: #{stats[:cheapest][:name]} ($#{stats[:cheapest][:price]})\n"
-      end
+      markdown << "- Cheapest: #{stats[:cheapest][:name]} ($#{stats[:cheapest][:price]})\n" if stats[:cheapest]
 
       if stats[:most_expensive]
         markdown << "- Most expensive: #{stats[:most_expensive][:name]} ($#{stats[:most_expensive][:price]})\n"
@@ -144,7 +142,7 @@ module Chat
     def format_products_markdown(products)
       return "## No products found\n" if products.empty?
 
-      markdown = +"## Relevant Products (#{products.size})\n"
+      markdown = "## Relevant Products (#{products.size})\n"
       markdown << "Format: [Name | Brand | Category | Price | Stock]\n\n"
 
       products.each_with_index do |product, index|
@@ -158,7 +156,7 @@ module Chat
       stock_indicator = product.in_stock ? '✓' : '✗'
       price_str = product.price ? "$#{product.price}" : 'N/A'
 
-      line = +"#{index}. #{product.name} | "
+      line = "#{index}. #{product.name} | "
       line << "#{product.brand&.name || 'N/A'} | "
       line << "#{product.category&.name || 'N/A'} | "
       line << "#{price_str} | #{stock_indicator}\n"
