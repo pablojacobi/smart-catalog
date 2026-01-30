@@ -3,15 +3,10 @@
 require 'spec_helper'
 ENV['RAILS_ENV'] ||= 'test'
 
-# IMPORTANT: Only delete DATABASE_URL in local development to prevent
-# accidentally connecting to production (Supabase). In CI, DATABASE_URL is
-# correctly configured to point to localhost test database.
-unless ENV['CI'] || ENV['GITHUB_ACTIONS']
-  # Check if DATABASE_URL points to production (Supabase)
-  if ENV['DATABASE_URL']&.include?('supabase.com')
-    ENV.delete('DATABASE_URL')
-  end
-end
+# IMPORTANT: In local development, remove DATABASE_URL to prevent accidentally
+# connecting to production (Supabase). In CI, DATABASE_URL is correctly configured
+# to point to localhost test database and should be preserved.
+ENV.delete('DATABASE_URL') unless ENV['CI'] || ENV['GITHUB_ACTIONS']
 
 require_relative '../config/environment'
 
