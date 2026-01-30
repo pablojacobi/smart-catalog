@@ -13,6 +13,7 @@ abort('The Rails environment is running in production mode!') if Rails.env.produ
 
 require 'rspec/rails'
 require 'webmock/rspec'
+require 'database_cleaner/active_record'
 
 # Load support files
 Rails.root.glob('spec/support/**/*.rb').each { |f| require f }
@@ -28,13 +29,34 @@ end
 
 RSpec.configure do |config|
   config.fixture_paths = [Rails.root.join('spec/fixtures')]
-  config.use_transactional_fixtures = true
+  config.use_transactional_fixtures = false # DatabaseCleaner handles this
   config.infer_spec_type_from_file_location!
   config.filter_rails_from_backtrace!
 
   config.include FactoryBot::Syntax::Methods
   config.include ActiveSupport::Testing::TimeHelpers
   config.include Devise::Test::IntegrationHelpers, type: :request
+
+  # DatabaseCleaner configuration
+  config.before(:suite) do
+    DatabaseCleaner.clean_with(:truncation)
+  end
+
+  config.before do
+    DatabaseCleaner.strategy = :transaction
+  end
+
+  config.before(:each, type: :request) do
+    DatabaseCleaner.strategy = :truncation
+  end
+
+  config.before do
+    DatabaseCleaner.start
+  end
+
+  config.after do
+    DatabaseCleaner.clean
+  end
 
   # Set default host for request specs
   config.before(:each, type: :request) do

@@ -21,9 +21,9 @@ module Gemini
 
     def sanitize_text(text)
       text.to_s
-        .gsub(/\s+/, ' ')
-        .strip
-        .slice(0, 10_000)
+          .gsub(/\s+/, ' ')
+          .strip
+          .slice(0, 10_000)
     end
   end
 end

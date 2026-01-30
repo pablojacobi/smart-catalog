@@ -19,13 +19,19 @@ class ApplicationQuery
   end
 
   # Alias for call
-  delegate :to_a, to: :call
+  def to_a
+    call.to_a
+  end
 
   # Count results
-  delegate :count, to: :relation
+  def count
+    relation.count
+  end
 
   # Check if any results exist
-  delegate :exists?, to: :relation
+  def exists?
+    relation.exists?
+  end
 
   private
 

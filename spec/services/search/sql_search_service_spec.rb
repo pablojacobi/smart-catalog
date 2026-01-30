@@ -19,7 +19,7 @@ RSpec.describe Search::SqlSearchService do
     it 'filters by category' do
       results = service.call({ category: 'electronics' })
 
-      products = results.pluck(:product)
+      products = results.map { |r| r[:product] }
       expect(products).to include(macbook, iphone, galaxy)
       expect(products).not_to include(shirt)
     end
@@ -27,7 +27,7 @@ RSpec.describe Search::SqlSearchService do
     it 'filters by brand' do
       results = service.call({ brand: 'apple' })
 
-      products = results.pluck(:product)
+      products = results.map { |r| r[:product] }
       expect(products).to include(macbook, iphone)
       expect(products).not_to include(galaxy, shirt)
     end
@@ -35,7 +35,7 @@ RSpec.describe Search::SqlSearchService do
     it 'filters by price range' do
       results = service.call({ min_price: 500, max_price: 1000 })
 
-      products = results.pluck(:product)
+      products = results.map { |r| r[:product] }
       expect(products).to include(iphone, galaxy)
       expect(products).not_to include(macbook, shirt)
     end
@@ -43,7 +43,7 @@ RSpec.describe Search::SqlSearchService do
     it 'filters by text query' do
       results = service.call({ query: 'MacBook' })
 
-      products = results.pluck(:product)
+      products = results.map { |r| r[:product] }
       expect(products).to include(macbook)
       expect(products).not_to include(iphone, galaxy, shirt)
     end
@@ -51,7 +51,7 @@ RSpec.describe Search::SqlSearchService do
     it 'combines multiple filters' do
       results = service.call({ category: 'electronics', brand: 'apple', max_price: 1000 })
 
-      products = results.pluck(:product)
+      products = results.map { |r| r[:product] }
       expect(products).to include(iphone)
       expect(products).not_to include(macbook, galaxy, shirt)
     end

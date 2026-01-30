@@ -99,13 +99,13 @@ module Chat
 
     def build_conversational_response(query)
       messages = [
-        { role: 'user', content: 'You are a friendly product catalog assistant. The catalog contains various products with categories, brands, prices, and specifications. Help users find what they need.' },
+        { role: 'user', content: "You are a friendly product catalog assistant. The catalog contains various products with categories, brands, prices, and specifications. Help users find what they need." },
         { role: 'assistant', content: "Hello! I'm here to help you find products." },
         { role: 'user', content: query }
       ]
 
       result = @client.generate_content(messages, temperature: 0.8)
-      content = result[:content] || 'Hello! I can help you find products. Try asking about specific categories, brands, or price ranges.'
+      content = result[:content] || "Hello! I can help you find products. Try asking about specific categories, brands, or price ranges."
 
       {
         content: content,
@@ -135,7 +135,7 @@ module Chat
       }
     end
 
-    def build_listing_response(products, _query)
+    def build_listing_response(products, query)
       return no_products_response('listing') if products.empty?
 
       content = "## Products Found\n\n"
@@ -145,7 +145,9 @@ module Chat
         content += format_product_display(product, index + 1)
       end
 
-      content += "\n*...and #{products.length - 20} more products*\n" if products.length > 20
+      if products.length > 20
+        content += "\n*...and #{products.length - 20} more products*\n"
+      end
 
       {
         content: content,
@@ -190,7 +192,7 @@ module Chat
                 when 'contextual'
                   "I don't have previous results to reference. Could you start a new search?"
                 else
-                  'No products found matching your criteria. Try broadening your search or using different keywords.'
+                  "No products found matching your criteria. Try broadening your search or using different keywords."
                 end
 
       {

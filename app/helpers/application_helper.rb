@@ -21,10 +21,10 @@ module ApplicationHelper
 
     # Unordered lists
     html = html.gsub(/^- (.+)$/, '<li class="ml-4">\1</li>')
-    html = html.gsub(%r{(<li.*?</li>\n?)+}) { |match| "<ul class=\"list-disc my-2\">#{match}</ul>" }
+    html = html.gsub(/(<li.*?<\/li>\n?)+/) { |match| "<ul class=\"list-disc my-2\">#{match}</ul>" }
 
     # Line breaks
-    html = html.gsub("\n", '<br>')
+    html = html.gsub(/\n/, '<br>')
 
     html.html_safe # rubocop:disable Rails/OutputSafety
   end

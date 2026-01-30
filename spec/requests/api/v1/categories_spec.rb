@@ -22,7 +22,7 @@ RSpec.describe 'Api::V1::Categories' do
       get '/api/v1/categories'
 
       json = response.parsed_body
-      names = json['data'].pluck('name')
+      names = json['data'].map { |c| c['name'] }
 
       expect(names).to eq(['Clothing', 'Electronics', 'Home & Garden'])
     end
@@ -38,7 +38,7 @@ RSpec.describe 'Api::V1::Categories' do
         get '/api/v1/categories', params: { with_products: 'true' }
 
         json = response.parsed_body
-        names = json['data'].pluck('name')
+        names = json['data'].map { |c| c['name'] }
 
         expect(names).to eq(['Electronics'])
       end

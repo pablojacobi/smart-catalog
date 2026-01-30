@@ -10,6 +10,8 @@ SimpleCov.start 'rails' do
   add_group 'Models', 'app/models'
   add_group 'Services', 'app/services'
   add_group 'Jobs', 'app/jobs'
+  add_group 'Queries', 'app/queries'
+  add_group 'Blueprints', 'app/blueprints'
 end
 
 RSpec.configure do |config|

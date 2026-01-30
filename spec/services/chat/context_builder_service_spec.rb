@@ -39,9 +39,9 @@ RSpec.describe Chat::ContextBuilderService do
     before do
       # Mock hybrid search to return predictable results
       allow(search_service).to receive(:call).and_return([
-                                                           { product: product1, score: 0.9, source: 'hybrid' },
-                                                           { product: product2, score: 0.8, source: 'hybrid' }
-                                                         ])
+        { product: product1, score: 0.9, source: 'hybrid' },
+        { product: product2, score: 0.8, source: 'hybrid' }
+      ])
     end
 
     context 'with a query and no filters' do
