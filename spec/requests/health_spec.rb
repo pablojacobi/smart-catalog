@@ -50,6 +50,11 @@ RSpec.describe 'Health Check' do
         allow(ActiveRecord::Base.connection).to receive(:execute).and_raise(PG::ConnectionBad)
       end
 
+      after do
+        # Restore the connection for DatabaseCleaner
+        RSpec::Mocks.space.proxy_for(ActiveRecord::Base.connection).reset
+      end
+
       it 'returns unhealthy status' do
         get '/health'
 

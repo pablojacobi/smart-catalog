@@ -17,9 +17,9 @@ if Rails.env.production?
 
   # Pre-define Devise::Mailer to prevent Zeitwerk from trying to load it
   module Devise
-    class Mailer < ActionMailer::Base
+    class Mailer < ApplicationMailer
       # Stub mailer - we don't use Devise email features
-      def self.method_missing(method, *args)
+      def self.method_missing(method, *_args)
         new.tap { |m| m.class.define_method(method) { |*| self } }
       end
 

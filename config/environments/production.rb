@@ -18,7 +18,7 @@ Rails.application.configure do
   config.log_tags = [:request_id]
 
   # Use default logging formatter
-  config.log_formatter = ::Logger::Formatter.new
+  config.log_formatter = Logger::Formatter.new
 
   # Log to STDOUT
   if ENV['RAILS_LOG_TO_STDOUT'].present?

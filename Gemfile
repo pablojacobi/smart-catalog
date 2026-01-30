@@ -41,6 +41,7 @@ gem 'turbo-rails', '~> 2.0'
 
 group :development, :test do
   gem 'brakeman', require: false
+  gem 'database_cleaner-active_record', '~> 2.2'
   gem 'debug', platforms: %i[mri windows]
   gem 'factory_bot_rails', '~> 6.4'
   gem 'faker', '~> 3.5'

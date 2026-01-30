@@ -49,8 +49,8 @@ module Chat
       - Always mention if a product is out of stock
     PROMPT
 
-    def initialize(gemini_client: nil, context_builder: nil, classifier: nil)
-      @gemini_client = gemini_client || Gemini::ClientService.new
+    def initialize(ai_client: nil, gemini_client: nil, context_builder: nil, classifier: nil)
+      @ai_client = ai_client || gemini_client || Gemini::ClientService.new
       @context_builder = context_builder || ContextBuilderService.new
       @classifier = classifier || QueryClassifierService.new
     end
@@ -102,7 +102,7 @@ module Chat
 
     def stream_response(messages, &)
       full_response = +''
-      @gemini_client.stream_content(messages, temperature: 0.7) do |chunk|
+      @ai_client.stream_content(messages, temperature: 0.7) do |chunk|
         full_response << chunk
         yield chunk if block_given?
       end
